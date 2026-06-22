@@ -6,9 +6,9 @@ import { useStudents } from "../../hooks/useStudents";
 import { useStudentReportCard } from "../../hooks/useStudents";
 import PageHeader from "../../components/ui/PageHeader";
 import SelectField from "../../components/ui/SelectField";
-import Spinner from "../../components/ui/Spinner";
 import ReportCardDocument from "./ReportCardDocument";
 import { downloadReportCard } from "../../utils/downloadReportCard";
+import TableSkeleton from "../../components/ui/TableSkeleton";
 
 const EXAM_TYPES = ["Mid-term", "End-term"];
 
@@ -119,9 +119,7 @@ export default function ReportCard() {
           Select a student to view their report card
         </div>
       ) : isLoading ? (
-        <div className="flex justify-center py-16">
-          <Spinner size="lg" />
-        </div>
+        <TableSkeleton rows={8} cols={4} />
       ) : isError ? (
         <div className="bg-white border border-gray-200 rounded-lg py-12 text-center text-sm text-gray-500">
           {error.status === 404

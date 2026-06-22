@@ -3,7 +3,7 @@ import { TrendingUp, BookOpen, Award, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStudentResults } from '../../hooks/useStudents';
 import  SectionHeader  from '../../components/ui/SectionHeader';
-import  Spinner  from '../../components/ui/Spinner';
+import  Spinner  from '../../components/ui/spinner';
 import { gradeBadge } from '../../utils/gradeColors';
 import StatCard from '../../components/ui/StartCard';
 

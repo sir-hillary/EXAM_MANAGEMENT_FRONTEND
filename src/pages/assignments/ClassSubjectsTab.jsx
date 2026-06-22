@@ -13,7 +13,7 @@ import { useClasses } from '../../hooks/useClasses';
 import { useSubjects } from '../../hooks/useSubjects';
 import  DataTable  from '../../components/ui/DataTable';
 import  ConfirmDialog  from '../../components/ui/ConfirmDialog';
-import  Spinner  from '../../components/ui/Spinner';
+import  Spinner  from '../../components/ui/spinner';
 import  SelectField  from '../../components/ui/SelectField';
 
 const currentAcademicYear = () => {

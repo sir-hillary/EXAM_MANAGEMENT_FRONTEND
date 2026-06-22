@@ -3,7 +3,7 @@ import { ClipboardEdit, BarChart3, Clock } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useTeacherDashboard } from "../../hooks/useDashboardStats";
 import SectionHeader from "../../components/ui/SectionHeader";
-import Spinner from "../../components/ui/Spinner";
+import Spinner from "../../components/ui/spinner";
 import { useResultsByExam } from "../../hooks/useResults";
 
 const examTypeBadge = {

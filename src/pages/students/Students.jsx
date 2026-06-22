@@ -5,7 +5,6 @@ import { useClasses } from "../../hooks/useClasses";
 import PageHeader from "../../components/ui/PageHeader";
 import DataTable from "../../components/ui/DataTable";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
-import Spinner from "../../components/ui/Spinner";
 import StudentFormModal from "./StudentFormModal";
 import TableSkeleton from "../../components/ui/TableSkeleton";
 
@@ -106,9 +105,7 @@ const Students = () => {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-16">
-          <Spinner size="lg" />
-        </div>
+        <TableSkeleton rows={8} cols={4} />
       ) : (
         <>
           <DataTable
