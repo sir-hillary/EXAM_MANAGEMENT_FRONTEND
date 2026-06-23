@@ -21,7 +21,7 @@ const calculateMeanGrade = (grades) => {
 };
 
 const ReportCardDocument = forwardRef(function ReportCardDocument(
-  { report, examType, schoolName = 'MUKKURU OUTREACH ACADEMY', schoolMotto = 'Learning and achieving together' },
+  { report, examType, schoolName = 'MUKURU OUTREACH ACADEMY', schoolMotto = 'Learning and achieving together' },
   ref
 ) {
   if (!report) return null;

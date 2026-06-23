@@ -135,12 +135,18 @@ export default function ReportCard() {
           </div>
 
           {/* Scrollable preview container */}
-          <div>
-            <ReportCardDocument
+          <div className="overflow-x-auto rounded-lg shadow-sm border border-gray-200">
+            <div
               ref={documentRef}
-              report={report}
-              examType={examType}
-            />
+              style={{
+                isolation: "isolate",
+                all: "initial",
+                display: "block",
+                colorScheme: "light",
+              }}
+            >
+              <ReportCardDocument report={report} examType={examType} />
+            </div>
           </div>
         </>
       ) : null}
