@@ -62,3 +62,11 @@ export const useDeleteClass = () => {
     onError: (err) => toast.error(err.message || 'Failed to delete class'),
   });
 };
+
+export const useClassPerformance = (classId, examType) => {
+  return useQuery({
+    queryKey: ['classes', classId, 'performance', examType],
+    queryFn: () => classesApi.getPerformance(classId, examType),
+    enabled: !!classId && !!examType,
+  });
+};

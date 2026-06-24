@@ -17,6 +17,7 @@ import ExamPicker from "./pages/results/ExamPicker";
 import MarkEntry from "./pages/results/MarkEntry";
 import ExamSummary from "./pages/results/ExamSummary";
 import ReportCard from "./pages/reportCard/ReportCard";
+import ClassPerformance from "./pages/classes/ClassPerformance";
 
 const App = () => {
   return (
@@ -46,6 +47,7 @@ const App = () => {
                 element={<ProtectedRoute allowedRoles={["admin", "teacher"]} />}
               >
                 <Route path="/exams" element={<Exams />} />
+                <Route path="/classes/:classId/performance" element={<ClassPerformance />} />
               </Route>
 
               <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>

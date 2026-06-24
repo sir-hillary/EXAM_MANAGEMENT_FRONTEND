@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, BarChart3 } from "lucide-react";
 import { useClasses, useDeleteClass } from "../../hooks/useClasses";
-import  PageHeader  from "../../components/ui/PageHeader";
-import  DataTable  from "../../components/ui/DataTable";
-import  ConfirmDialog  from "../../components/ui/ConfirmDialog";
+import PageHeader from "../../components/ui/PageHeader";
+import DataTable from "../../components/ui/DataTable";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import ClassFormModal from "./ClassFormModal";
 import TableSkeleton from "../../components/ui/TableSkeleton";
+import { getDivision } from "../../utils/schoolDivisions";
+import { useNavigate } from "react-router-dom";
 
 const Classes = () => {
   const { data, isLoading, isError, error } = useClasses();
@@ -14,10 +16,19 @@ const Classes = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [editingClass, setEditingClass] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const navigate = useNavigate();
 
   const columns = [
     { key: "name", header: "Name" },
-    { key: "grade", header: "Learners Grade" },
+    {
+      key: "division",
+      header: "Division",
+      render: (row) => {
+        const div = getDivision(row.grade);
+        return <span className={`badge ${div.color}`}>{div.label}</span>;
+      },
+    },
+    { key: "grade", header: "Grade" },
     {
       key: "created_at",
       header: "Created",
@@ -54,6 +65,14 @@ const Classes = () => {
         data={data?.data}
         actions={(row) => (
           <>
+            <button
+              onClick={() => navigate(`/classes/${row.id}/performance`)}
+              className="text-gray-400 hover:text-brand-600"
+              aria-label="View performance"
+              title="Class performance"
+            >
+              <BarChart3 size={16} />
+            </button>
             <button
               onClick={() => {
                 setEditingClass(row);

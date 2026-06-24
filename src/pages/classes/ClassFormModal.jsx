@@ -1,9 +1,10 @@
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useCreateClass, useUpdateClass } from "../../hooks/useClasses";
 import Modal from "../../components/ui/Modal";
+import { getDivision } from "../../utils/schoolDivisions";
 
 const classSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -22,9 +23,12 @@ const ClassFormModal = ({ isOpen, onClose, initialData }) => {
     formState: { errors },
   } = useForm({ resolver: zodResolver(classSchema) });
 
+  const gradeValue = useWatch({ control, name: "grade" });
+  const division = gradeValue ? getDivision(gradeValue) : null;
+
   useEffect(() => {
     if (isOpen) {
-      reset(initialData || { name: "", grade: ""});
+      reset(initialData || { name: "", grade: "" });
     }
   }, [isOpen, initialData, reset]);
 
@@ -32,7 +36,7 @@ const ClassFormModal = ({ isOpen, onClose, initialData }) => {
   const serverError = createClass.error?.message || updateClass.error?.message;
 
   const onSubmit = (formData) => {
-    const payload = { ...formData|| null };
+    const payload = { ...(formData || null) };
 
     const mutation = isEditing
       ? updateClass.mutateAsync({ id: initialData.id, payload })
@@ -71,13 +75,21 @@ const ClassFormModal = ({ isOpen, onClose, initialData }) => {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">
-              Grade level
+              Grade 
             </label>
             <input
               type="number"
               className="input-field"
               {...register("grade")}
             />
+            {division && (
+              <p className="mt-1 text-xs">
+                Division:{" "}
+                <span className={`badge ${division.color}`}>
+                  {division.label}
+                </span>
+              </p>
+            )}
             {errors.grade && (
               <p className="mt-1 text-xs text-red-600">
                 {errors.grade.message}

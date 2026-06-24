@@ -9,7 +9,8 @@ import TableSkeleton from "../../components/ui/TableSkeleton";
 
 const previewGrade = (marks, total) => {
   if (marks === "" || marks === null || marks === undefined) return null;
-  const pct = (Number(marks) / total) * 100;
+  const rounded = Math.round(Number(marks));
+  const pct = (rounded / total) * 100;
   if (pct >= 90) return "EE1";
   if (pct >= 75) return "EE2";
   if (pct >= 58) return "ME1";

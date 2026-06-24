@@ -7,11 +7,13 @@ import DataTable from "../../components/ui/DataTable";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import StudentFormModal from "./StudentFormModal";
 import TableSkeleton from "../../components/ui/TableSkeleton";
+import { getDivision } from "../../utils/schoolDivisions";
 
 const Students = () => {
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [divisionFilter, setDivisionFilter] = useState('');
 
   const { data, isLoading, isError, error } = useStudents({
     search: search || undefined,
@@ -20,6 +22,10 @@ const Students = () => {
     limit: 20,
   });
   const { data: classesData } = useClasses({ limit: 100 });
+  const filteredClasses = (classesData?.data || []).filter((c) => {
+  if (!divisionFilter) return true;
+  return getDivision(c.grade).label === divisionFilter;
+});
   const deleteStudent = useDeleteStudent();
 
   const [formOpen, setFormOpen] = useState(false);
@@ -96,11 +102,24 @@ const Students = () => {
           className="input-field sm:w-48"
         >
           <option value="">All classes</option>
-          {classesData?.data?.map((c) => (
+          {filteredClasses.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
             </option>
           ))}
+        </select>
+
+        <select
+          value={divisionFilter}
+          onChange={(e) => {
+            setDivisionFilter(e.target.value);
+            setPage(1);
+          }}
+          className="input-field sm:w-44"
+        >
+          <option value="">All divisions</option>
+          <option value="Primary">Primary (Gr 4–6)</option>
+          <option value="Junior School">Junior School (Gr 7–8)</option>
         </select>
       </div>
 
