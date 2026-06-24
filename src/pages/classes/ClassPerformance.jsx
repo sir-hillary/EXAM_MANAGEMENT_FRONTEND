@@ -29,7 +29,7 @@ const ClassPerformance = () => {
   const { data: classesData } = useClasses({ limit: 100 });
 
   const report = data?.data;
-  const division = report?.class ? getDivision(report.class.grade_level) : null;
+  const division = report?.class ? getDivision(report.class.grade) : null;
 
   return (
     <div>
@@ -46,7 +46,7 @@ const ClassPerformance = () => {
         }
         description={
           division
-            ? `${division.label} · Grade ${report?.class.grade_level}`
+            ? `${division.label} · Grade ${report?.class.grade}`
             : "Class ranking by marks and points"
         }
       />
