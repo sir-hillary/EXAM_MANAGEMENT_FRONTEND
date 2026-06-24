@@ -5,7 +5,7 @@ import { useClassPerformance } from "../../hooks/useClasses";
 import { useClasses } from "../../hooks/useClasses";
 import PageHeader from "../../components/ui/PageHeader";
 import SelectField from "../../components/ui/SelectField";
-import Spinner from "../../components/ui/Spinner";
+import Spinner from "../../components/ui/spinner";
 import { gradeBadge } from "../../utils/gradeColors";
 import { getDivision } from "../../utils/schoolDivisions";
 
