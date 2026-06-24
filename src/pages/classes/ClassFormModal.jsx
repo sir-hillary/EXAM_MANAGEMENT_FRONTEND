@@ -20,6 +20,7 @@ const ClassFormModal = ({ isOpen, onClose, initialData }) => {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm({ resolver: zodResolver(classSchema) });
 
