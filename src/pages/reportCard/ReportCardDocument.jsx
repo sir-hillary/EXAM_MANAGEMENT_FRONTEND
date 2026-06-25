@@ -58,6 +58,48 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
   if (!report) return null;
 
   const { student, subjects, summary } = report;
+  const isPrimary = report.division === "primary";
+
+  // Table headers — conditional Points column
+  const headers = isPrimary
+    ? [
+        "Subject",
+        "Code",
+        "Marks",
+        "Out of",
+        "Percentage",
+        "Performance",
+        "Grade",
+        "Remarks",
+      ]
+    : [
+        "Subject",
+        "Code",
+        "Marks",
+        "Out of",
+        "Percentage",
+        "Points",
+        "Performance",
+        "Grade",
+      ];
+
+  const summaryStats = isPrimary
+    ? [
+        { label: "Subjects", value: summary.subjects_count },
+        { label: "Total Marks", value: summary.total_marks },
+        { label: "Out Of", value: summary.total_possible },
+        { label: "Average", value: `${summary.average_percentage}%` },
+      ]
+    : [
+        { label: "Subjects", value: summary.subjects_count },
+        { label: "Total Marks", value: summary.total_marks },
+        {
+          label: "Total Points",
+          value: `${summary.total_points} / ${summary.max_points}`,
+        },
+        { label: "Average", value: `${summary.average_percentage}%` },
+      ];
+
   const meanGrade =
     summary.mean_grade || calculateMeanGrade(subjects.map((s) => s.grade));
   const generatedOn = new Date().toLocaleDateString(undefined, {
@@ -302,15 +344,7 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
           borderBottom: "1px solid #e2e8f0",
         }}
       >
-        {[
-          { label: "Subjects", value: summary.subjects_count },
-          { label: "Total Marks", value: `${summary.total_marks}` },
-          {
-            label: "Total Points",
-            value: `${summary.total_points} / ${summary.max_points}`,
-          },
-          { label: "Average", value: `${summary.average_percentage}%` },
-        ].map((s, i) => (
+        {summaryStats.map((s, i) => (
           <div
             key={i}
             style={{
@@ -357,16 +391,7 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ backgroundColor: "#1a2744" }}>
-              {[
-                "Subject",
-                "Code",
-                "Marks",
-                "Out of",
-                "%",
-                "Points",
-                "Performance",
-                "Grade",
-              ].map((h, i) => (
+              {headers.map((h, i) => (
                 <th
                   key={h}
                   style={{
@@ -387,7 +412,7 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
           </thead>
           <tbody>
             {subjects.map((row, i) => {
-              const pct = row.percentage; // already computed by backend as x.x
+              const pct = row.percentage;
               const even = i % 2 === 0;
               return (
                 <tr key={i} style={{ background: even ? "#fff" : "#f8fafc" }}>
@@ -438,15 +463,21 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
                   >
                     {pct}%
                   </td>
-                  <td
-                    style={cell(null, {
-                      textAlign: "center",
-                      fontWeight: "700",
-                      color: "#1a2744",
-                    })}
-                  >
-                    {row.points} / 8
-                  </td>
+                  {isPrimary ? (
+                    <td style={cell({ fontSize: "11px", color: "#475569" })}>
+                      {row.subject_remark}
+                    </td>
+                  ) : (
+                    <td
+                      style={cell({
+                        textAlign: "center",
+                        fontWeight: "700",
+                        color: "#1a2744",
+                      })}
+                    >
+                      {row.points} / 8
+                    </td>
+                  )}
                   <td
                     style={cell(null, {
                       width: "130px",
