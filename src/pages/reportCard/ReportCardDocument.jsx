@@ -464,7 +464,12 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
                     {pct}%
                   </td>
                   {isPrimary ? (
-                    <td style={cell({ fontSize: "11px", color: "#475569" })}>
+                    <td
+                      style={cell(null, {
+                        fontSize: "11px",
+                        color: "#475569",
+                      })}
+                    >
                       {row.subject_remark}
                     </td>
                   ) : (
