@@ -29,8 +29,8 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
   {
     data,
     examType,
-    schoolName = "Excellence Academy",
-    schoolMotto = "Knowledge · Integrity · Excellence",
+    schoolName = "MUKURU OUTREACH ACADEMY",
+    schoolMotto = "learning · achieving · together",
     schoolAddress = "P.O.BOX 402-00507",
   },
   ref,
