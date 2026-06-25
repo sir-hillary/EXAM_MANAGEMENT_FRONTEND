@@ -59,6 +59,7 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
 
   const { student, subjects, summary } = report;
   const isPrimary = report.division === "primary";
+   console.log(isPrimary)
 
   // Table headers — conditional Points column
   const headers = isPrimary
