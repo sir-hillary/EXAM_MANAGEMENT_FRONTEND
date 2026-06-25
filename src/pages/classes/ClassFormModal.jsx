@@ -5,16 +5,23 @@ import { z } from "zod";
 import { useCreateClass, useUpdateClass } from "../../hooks/useClasses";
 import Modal from "../../components/ui/Modal";
 import { getDivision } from "../../utils/schoolDivisions";
+import { useTeachers } from "../../hooks/useTeachers";
 
 const classSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
   grade: z.coerce.number().int().min(1).max(13),
+  class_teacher_id: z
+    .union([z.coerce.number().int(), z.literal("")])
+    .optional(),
+  parent_rep: z.string().max(150).optional().or(z.literal("")),
 });
 
 const ClassFormModal = ({ isOpen, onClose, initialData }) => {
   const isEditing = !!initialData;
   const createClass = useCreateClass();
   const updateClass = useUpdateClass();
+
+  const { data: teachersData } = useTeachers({ limit: 100 });
 
   const {
     register,
@@ -29,7 +36,7 @@ const ClassFormModal = ({ isOpen, onClose, initialData }) => {
 
   useEffect(() => {
     if (isOpen) {
-      reset(initialData || { name: "", grade: "" });
+      reset(initialData || { name: "", grade: "", class_teacher_id: '', parent_rep: '' });
     }
   }, [isOpen, initialData, reset]);
 
@@ -76,7 +83,7 @@ const ClassFormModal = ({ isOpen, onClose, initialData }) => {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">
-              Grade 
+              Grade
             </label>
             <input
               type="number"
@@ -94,6 +101,42 @@ const ClassFormModal = ({ isOpen, onClose, initialData }) => {
             {errors.grade && (
               <p className="mt-1 text-xs text-red-600">
                 {errors.grade.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Class teacher
+            </label>
+            <select className="input-field" {...register("class_teacher_id")}>
+              <option value="">No class teacher assigned</option>
+              {teachersData?.data?.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.first_name} {t.last_name}
+                </option>
+              ))}
+            </select>
+            {errors.class_teacher_id && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.class_teacher_id.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Parent representative{" "}
+              <span className="text-gray-400">(optional)</span>
+            </label>
+            <input
+              className="input-field"
+              placeholder="Full name"
+              {...register("parent_rep")}
+            />
+            {errors.parent_rep && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.parent_rep.message}
               </p>
             )}
           </div>

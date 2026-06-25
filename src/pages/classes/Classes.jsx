@@ -30,6 +30,16 @@ const Classes = () => {
     },
     { key: "grade", header: "Grade" },
     {
+      key: "class_teacher_name",
+      header: "Class teacher",
+      render: (row) =>
+        row.class_teacher_name ? (
+          <span className="text-gray-700">{row.class_teacher_name}</span>
+        ) : (
+          <span className="text-gray-400 text-xs">Unassigned</span>
+        ),
+    },
+    {
       key: "created_at",
       header: "Created",
       render: (row) => new Date(row.created_at).toLocaleDateString(),

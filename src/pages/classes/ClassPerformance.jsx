@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, Loader2 } from "lucide-react";
 import { useClassPerformance } from "../../hooks/useClasses";
 import { useClasses } from "../../hooks/useClasses";
 import PageHeader from "../../components/ui/PageHeader";
@@ -8,6 +8,10 @@ import SelectField from "../../components/ui/SelectField";
 import Spinner from "../../components/ui/spinner";
 import { gradeBadge } from "../../utils/gradeColors";
 import { getDivision } from "../../utils/schoolDivisions";
+import { useRef } from "react";
+import toast from "react-hot-toast";
+import { downloadReportCard } from "../../utils/downloadReportCard";
+import ClassPerformancePDF from "./ClassPerformancePDF";
 
 const EXAM_TYPES = ["Mid-term", "End-term"];
 
@@ -27,6 +31,22 @@ const ClassPerformance = () => {
     examType,
   );
   const { data: classesData } = useClasses({ limit: 100 });
+
+  const pdfRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      const filename = `${report.class.name}_${examType.replace(/\s+/g, "-")}_Performance.pdf`;
+      await downloadReportCard(pdfRef, filename);
+      toast.success("Performance report downloaded");
+    } catch {
+      toast.error("PDF generation failed — try again");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const report = data?.data;
   const division = report?.class ? getDivision(report.class.grade) : null;
@@ -48,6 +68,25 @@ const ClassPerformance = () => {
           division
             ? `${division.label} · Grade ${report?.class.grade}`
             : "Class ranking by marks and points"
+        }
+        action={
+          report && (
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              className="btn-primary w-full sm:w-auto justify-center"
+            >
+              {downloading ? (
+                <>
+                  <Loader2 size={15} className="animate-spin" /> Generating...
+                </>
+              ) : (
+                <>
+                  <Download size={15} /> Download PDF
+                </>
+              )}
+            </button>
+          )
         }
       />
 
@@ -226,6 +265,14 @@ const ClassPerformance = () => {
               </div>
             ))}
           </div>
+
+          {report && (
+            <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
+              <div ref={pdfRef}>
+                <ClassPerformancePDF data={report} examType={examType} />
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
