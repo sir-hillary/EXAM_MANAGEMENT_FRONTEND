@@ -35,8 +35,6 @@ const ReportCard = () => {
   } = useStudentReportCard(selectedStudentId, examType);
   const report = reportData?.data;
 
-  console.log(report)
-
   const handleDownload = async () => {
     if (!report) return;
     setDownloading(true);

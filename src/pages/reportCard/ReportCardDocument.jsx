@@ -59,7 +59,7 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
 
   const { student, subjects, summary } = report;
   const isPrimary = report.division === "primary";
-   console.log(isPrimary)
+  console.log(isPrimary);
 
   // Table headers — conditional Points column
   const headers = isPrimary
@@ -69,9 +69,9 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
         "Marks",
         "Out of",
         "Percentage",
+        "Remarks",
         "Performance",
         "Grade",
-        "Remarks",
       ]
     : [
         "Subject",
@@ -475,7 +475,7 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
                     </td>
                   ) : (
                     <td
-                      style={cell({
+                      style={cell(null, {
                         textAlign: "center",
                         fontWeight: "700",
                         color: "#1a2744",
