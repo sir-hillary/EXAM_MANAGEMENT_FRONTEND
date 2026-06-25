@@ -12,7 +12,7 @@ import TableSkeleton from "../../components/ui/TableSkeleton";
 
 const EXAM_TYPES = ["Mid-term", "End-term"];
 
-export default function ReportCard() {
+const ReportCard = () => {
   const { role, user } = useAuth();
   const isStudent = role === "student";
 
@@ -34,6 +34,8 @@ export default function ReportCard() {
     error,
   } = useStudentReportCard(selectedStudentId, examType);
   const report = reportData?.data;
+
+  console.log(report)
 
   const handleDownload = async () => {
     if (!report) return;
@@ -152,4 +154,6 @@ export default function ReportCard() {
       ) : null}
     </div>
   );
-}
+};
+
+export default ReportCard;
