@@ -66,7 +66,7 @@ const Navbar = ({ onMenuClick }) => {
 
         {/* Breadcrumb — hidden on very small screens */}
         <div className="hidden sm:flex items-center gap-1.5 text-sm text-gray-500">
-          <span className="text-gray-400 text-xs">Exam Manager</span>
+          <span className="text-gray-400 text-xs">Assessment manager</span>
           <span className="text-gray-300">/</span>
           <span className="text-gray-900 font-medium">{pageLabel}</span>
         </div>

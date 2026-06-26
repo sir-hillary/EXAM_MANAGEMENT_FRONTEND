@@ -94,7 +94,7 @@ const Sidebar = ({ open, onClose }) => {
                 Mukuru Outreach Academy
               </p>
               <p style={{ color: 'rgba(200,220,205,0.45)', fontSize: '9px', letterSpacing: '0.3px' }}>
-                Knowledge · Integrity · Excellence
+                Learning · Achieving · Together
               </p>
             </div>
           </div>
