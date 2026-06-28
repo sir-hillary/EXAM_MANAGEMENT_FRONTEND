@@ -6,9 +6,10 @@ import {
   BookOpen,
   ArrowRight,
 } from "lucide-react";
-import  SectionHeader  from "../../components/ui/SectionHeader";
+import SectionHeader from "../../components/ui/SectionHeader";
 import StatCard from "../../components/ui/StartCard";
 import useAdminStats from "../../hooks/useDashboardStats";
+import { useGenderStats } from "../../hooks/useStudents";
 
 const examTypeBadge = {
   "Mid-term": "bg-amber-100 text-amber-700",
@@ -17,6 +18,8 @@ const examTypeBadge = {
 
 const AdminDashboard = () => {
   const { counts, recentExams, isLoading } = useAdminStats();
+  const { data: genderData } = useGenderStats();
+  const gender = genderData?.data;
 
   return (
     <div>
@@ -56,6 +59,37 @@ const AdminDashboard = () => {
           color="amber"
         />
       </div>
+      {gender && (
+        <div className="mb-6">
+          <SectionHeader title="Student gender breakdown" />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <StatCard
+              label="Boys"
+              value={gender.boys}
+              icon={Users}
+              color="brand"
+            />
+            <StatCard
+              label="Girls"
+              value={gender.girls}
+              icon={Users}
+              color="purple"
+            />
+            <StatCard
+              label="Other"
+              value={Number(gender.other) + Number(gender.unspecified)}
+              icon={Users}
+              color="amber"
+            />
+            <StatCard
+              label="Total students"
+              value={gender.total}
+              icon={Users}
+              color="green"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Quick actions */}
       <div className="mb-6">

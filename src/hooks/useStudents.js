@@ -70,3 +70,10 @@ export const useDeleteStudent = () => {
     onError: (err) => toast.error(err.message || "Failed to delete student"),
   });
 };
+
+export const useGenderStats = (classId) => {
+  return useQuery({
+    queryKey: ['students', 'stats', 'gender', classId],
+    queryFn: () => studentsApi.getGenderStats(classId),
+  });
+};

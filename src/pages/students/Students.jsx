@@ -13,7 +13,7 @@ const Students = () => {
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState("");
   const [page, setPage] = useState(1);
-  const [divisionFilter, setDivisionFilter] = useState('');
+  const [divisionFilter, setDivisionFilter] = useState("");
 
   const { data, isLoading, isError, error } = useStudents({
     search: search || undefined,
@@ -23,9 +23,9 @@ const Students = () => {
   });
   const { data: classesData } = useClasses({ limit: 100 });
   const filteredClasses = (classesData?.data || []).filter((c) => {
-  if (!divisionFilter) return true;
-  return getDivision(c.grade).label === divisionFilter;
-});
+    if (!divisionFilter) return true;
+    return getDivision(c.grade).label === divisionFilter;
+  });
   const deleteStudent = useDeleteStudent();
 
   const [formOpen, setFormOpen] = useState(false);
@@ -43,6 +43,22 @@ const Students = () => {
       key: "class_name",
       header: "Class",
       render: (row) => row.class_name || "—",
+    },
+    {
+      key: "gender",
+      header: "Gender",
+      render: (row) => {
+        if (!row.gender)
+          return <span className="text-gray-400 text-xs">—</span>;
+        const colors = {
+          male: "bg-blue-100 text-blue-700",
+          female: "bg-pink-100 text-pink-700",
+          other: "bg-gray-100 text-gray-600",
+        };
+        return (
+          <span className={`badge ${colors[row.gender]}`}>{row.gender}</span>
+        );
+      },
     },
     {
       key: "date_of_birth",

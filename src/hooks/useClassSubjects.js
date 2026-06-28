@@ -15,7 +15,7 @@ export const useAssignClassSubject = () => {
   return useMutation({
     mutationFn: classSubjectsApi.assign,
     onSuccess: () => {queryClient.invalidateQueries({ queryKey: ['class-subjects'] });
-    toast("Class assigned")
+    toast.success("Class assigned")
   },
   onError: (err) => toast.error(err.message || 'Failed to assign  class-subjects'),
   });
