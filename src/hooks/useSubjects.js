@@ -53,3 +53,11 @@ export const useDeleteSubject = () => {
     onError: (err) => toast.error(err.message || "Failed to delete subjects"),
   });
 };
+
+export const useSubjectsForClass = (division) => {
+  return useQuery({
+    queryKey: ['subjects', 'for-class', division],
+    queryFn: () => subjectsApi.getForClass(division),
+    enabled: !!division,
+  });
+};

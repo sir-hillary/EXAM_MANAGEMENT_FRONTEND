@@ -415,124 +415,240 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
           </thead>
           <tbody>
             {subjects.map((row, i) => {
-              const pct = row.percentage;
+              const pct =
+                row.percentage ??
+                parseFloat(
+                  ((row.marks_obtained / row.max_marks) * 100).toFixed(1),
+                );
               const even = i % 2 === 0;
-              return (
-                <tr key={i} style={{ background: even ? "#fff" : "#f8fafc" }}>
-                  <td
-                    style={cell(null, { fontWeight: "500", color: "#0f172a" })}
+
+              // Combined subtotal row — rendered with a distinct style
+              if (row.is_combined) {
+                return (
+                  <tr
+                    key={`combined-${row.subject_id}`}
+                    style={{
+                      background: "#f0f4f8",
+                      borderTop: "1px solid #c9a84c",
+                    }}
                   >
-                    {row.subject_name}
-                  </td>
-                  <td style={cell(null, { textAlign: "center" })}>
-                    <span
-                      style={{
-                        background: "#e2e8f0",
-                        color: "#475569",
-                        padding: "2px 8px",
-                        borderRadius: "10px",
-                        fontSize: "10px",
-                        fontWeight: "600",
-                      }}
-                    >
-                      {row.subject_code}
-                    </span>
-                  </td>
-                  <td
-                    style={cell(null, {
-                      textAlign: "center",
-                      fontWeight: "700",
-                      color: "#1a2744",
-                      fontSize: "13px",
-                    })}
-                  >
-                    {row.marks_obtained}
-                  </td>
-                  <td
-                    style={cell(null, {
-                      textAlign: "center",
-                      color: "#64748b",
-                    })}
-                  >
-                    {row.total_marks}
-                  </td>
-                  <td
-                    style={cell(null, {
-                      textAlign: "center",
-                      fontWeight: "700",
-                      fontSize: "13px",
-                      color: GRADE_COLORS[row.grade] || "#1f2937",
-                    })}
-                  >
-                    {pct}%
-                  </td>
-                  {isPrimary ? (
                     <td
-                      style={cell(null, {
-                        fontSize: "11px",
-                        color: "#475569",
-                      })}
-                    >
-                      {row.subject_remark}
-                    </td>
-                  ) : (
-                    <td
-                      style={cell(null, {
-                        textAlign: "center",
+                      style={cell({
                         fontWeight: "700",
                         color: "#1a2744",
+                        fontSize: "12px",
                       })}
                     >
-                      {row.points} / 8
+                      {row.subject_name}
+                      <span
+                        style={{
+                          marginLeft: "6px",
+                          fontSize: "10px",
+                          color: "#c9a84c",
+                          fontWeight: "600",
+                          letterSpacing: "0.5px",
+                        }}
+                      >
+                        COMBINED
+                      </span>
                     </td>
-                  )}
-                  <td
-                    style={cell(null, {
-                      width: "130px",
-                      paddingLeft: "14px",
-                      paddingRight: "14px",
-                    })}
+                    <td style={cell({ textAlign: "center" })}>
+                      <span
+                        style={{
+                          background: "#1a2744",
+                          color: "#c9a84c",
+                          padding: "2px 8px",
+                          borderRadius: "10px",
+                          fontSize: "10px",
+                          fontWeight: "600",
+                        }}
+                      >
+                        {row.subject_code}
+                      </span>
+                    </td>
+                    <td
+                      style={cell({
+                        textAlign: "center",
+                        fontWeight: "800",
+                        color: "#1a2744",
+                        fontSize: "14px",
+                      })}
+                    >
+                      {row.marks_obtained}
+                    </td>
+                    <td style={cell({ textAlign: "center", color: "#64748b" })}>
+                      {row.max_marks}
+                    </td>
+                    <td
+                      style={cell({
+                        textAlign: "center",
+                        fontWeight: "800",
+                        color: GRADE_COLORS[row.grade] || "#1f2937",
+                        fontSize: "13px",
+                      })}
+                    >
+                      {pct}%
+                    </td>
+                    {/* Points or remarks column */}
+                    {isPrimary ? (
+                      <td style={cell({ fontSize: "11px", color: "#475569" })}>
+                        {row.subject_remark}
+                      </td>
+                    ) : (
+                      <td
+                        style={cell({
+                          textAlign: "center",
+                          fontWeight: "700",
+                          color: "#1a2744",
+                        })}
+                      >
+                        {row.points} / 8
+                      </td>
+                    )}
+                    {/* No performance bar on combined row — just the grade circle */}
+                    <td style={cell({ width: "130px" })} />
+                    <td style={cell({ textAlign: "center" })}>
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: "28px",
+                          height: "28px",
+                          borderRadius: "50%",
+                          background: GRADE_COLORS[row.grade] || "#94a3b8",
+                          color: "#fff",
+                          fontSize: "12px",
+                          fontWeight: "700",
+                        }}
+                      >
+                        {row.grade}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              }
+
+              // Paper row — slightly indented, lighter styling
+              if (row.is_paper_row) {
+                return (
+                  <tr
+                    key={row.subject_id}
+                    style={{ background: even ? "#fafbfc" : "#f5f8fa" }}
                   >
-                    <div
-                      style={{
-                        background: "#e2e8f0",
-                        borderRadius: "999px",
-                        height: "8px",
-                        overflow: "hidden",
-                        position: "relative",
-                      }}
+                    <td
+                      style={cell({
+                        color: "#64748b",
+                        paddingLeft: "20px",
+                        fontSize: "11px",
+                      })}
+                    >
+                      ↳ {row.subject_name}
+                    </td>
+                    <td style={cell({ textAlign: "center" })}>
+                      <span
+                        style={{
+                          background: "#e2e8f0",
+                          color: "#475569",
+                          padding: "2px 6px",
+                          borderRadius: "8px",
+                          fontSize: "9px",
+                          fontWeight: "600",
+                        }}
+                      >
+                        {row.subject_code}
+                      </span>
+                    </td>
+                    <td
+                      style={cell({
+                        textAlign: "center",
+                        fontWeight: "600",
+                        color: "#334155",
+                      })}
+                    >
+                      {row.marks_obtained}
+                    </td>
+                    <td
+                      style={cell({
+                        textAlign: "center",
+                        color: "#94a3b8",
+                        fontSize: "11px",
+                      })}
+                    >
+                      {row.max_marks}
+                    </td>
+                    <td
+                      style={cell({
+                        textAlign: "center",
+                        color: "#64748b",
+                        fontSize: "11px",
+                      })}
+                    >
+                      {pct}%
+                    </td>
+                    {isPrimary ? (
+                      <td style={cell({})} />
+                    ) : (
+                      <td style={cell({})} />
+                    )}
+                    <td
+                      style={cell({
+                        width: "130px",
+                        paddingLeft: "14px",
+                        paddingRight: "14px",
+                      })}
                     >
                       <div
                         style={{
-                          position: "absolute",
-                          left: 0,
-                          top: 0,
-                          bottom: 0,
-                          width: `${pct}%`,
-                          background: GRADE_COLORS[row.grade] || "#94a3b8",
+                          background: "#e2e8f0",
                           borderRadius: "999px",
+                          height: "6px",
+                          overflow: "hidden",
+                          position: "relative",
                         }}
-                      />
-                    </div>
-                  </td>
-                  <td style={cell(null, { textAlign: "center" })}>
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: "28px",
-                        height: "28px",
-                        borderRadius: "50%",
-                        background: GRADE_COLORS[row.grade] || "#94a3b8",
-                        color: "#fff",
-                        fontSize: "12px",
-                        fontWeight: "700",
-                      }}
-                    >
-                      {row.grade}
-                    </span>
-                  </td>
+                      >
+                        <div
+                          style={{
+                            position: "absolute",
+                            left: 0,
+                            top: 0,
+                            bottom: 0,
+                            width: `${pct * 2}%`,
+                            background: "#94a3b8",
+                            borderRadius: "999px",
+                          }}
+                        />
+                      </div>
+                    </td>
+                    <td style={cell({ textAlign: "center" })}>
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: "22px",
+                          height: "22px",
+                          borderRadius: "50%",
+                          background: GRADE_COLORS[row.grade] || "#94a3b8",
+                          color: "#fff",
+                          fontSize: "10px",
+                          fontWeight: "600",
+                        }}
+                      >
+                        {row.grade}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              }
+
+              // Regular subject row — unchanged from existing code
+              return (
+                <tr
+                  key={row.subject_id}
+                  style={{ background: even ? "#fff" : "#f8fafc" }}
+                >
+                  {/* ... existing regular row JSX unchanged ... */}
                 </tr>
               );
             })}

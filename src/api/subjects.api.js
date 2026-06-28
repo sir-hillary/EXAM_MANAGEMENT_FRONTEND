@@ -18,4 +18,8 @@ export const subjectsApi = {
 
   remove: (id) =>
     apiClient.delete(`/subjects/${id}`).then(res => res.data),
+  getForClass: (division) =>
+  apiClient
+    .get('/subjects/for-class', { params: { division } })
+    .then(res => res.data),
 };

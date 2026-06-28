@@ -4,7 +4,7 @@ import { Save, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { useExam } from "../../hooks/useExams";
 import { useClassStudents } from "../../hooks/useClasses";
 import { useResultsByExam, useBulkCreateResults } from "../../hooks/useResults";
-import {gradeBadge} from "../../utils/gradeColors";
+import { gradeBadge } from "../../utils/gradeColors";
 import TableSkeleton from "../../components/ui/TableSkeleton";
 
 const previewGrade = (marks, total) => {
@@ -97,7 +97,7 @@ const MarkEntry = () => {
   };
 
   if (examLoading || studentsLoading) {
-    return <TableSkeleton rows={8} cols={4} />
+    return <TableSkeleton rows={8} cols={4} />;
   }
 
   if (!exam) {
@@ -116,6 +116,13 @@ const MarkEntry = () => {
         </p>
       </div>
 
+      {exam.subject_name?.includes("Paper") ||
+      exam.subject_name?.includes("Karatasi") ? (
+        <div className="mb-4 px-3 py-2 rounded-md bg-amber-50 border border-amber-200 text-xs text-amber-700">
+          This is a paper exam (max {exam.total_marks} marks). Marks from both
+          papers combine for the full subject total on the report card.
+        </div>
+      ) : null}
       {submitError && (
         <div className="mb-4 px-3 py-2 rounded-md bg-red-50 border border-red-200 text-sm text-red-700">
           {submitError}
@@ -126,7 +133,6 @@ const MarkEntry = () => {
           <Check size={14} /> Marks saved successfully
         </div>
       )}
-
       {/* Progress bar — visible on all breakpoints */}
       <div className="flex items-center justify-between mb-3 text-xs text-gray-500">
         <span>
@@ -144,7 +150,6 @@ const MarkEntry = () => {
           }}
         />
       </div>
-
       {/* ── Desktop / tablet: full grid ───────────────────────────────────── */}
       <div className="hidden md:block bg-white border border-gray-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
@@ -196,7 +201,6 @@ const MarkEntry = () => {
           </table>
         </div>
       </div>
-
       {/* ── Mobile: one student at a time ─────────────────────────────────── */}
       {students.length > 0 && (
         <div className="md:hidden bg-white border border-gray-200 rounded-lg p-4">
@@ -273,7 +277,6 @@ const MarkEntry = () => {
           </button>
         </div>
       )}
-
       {/* Sticky save bar */}
       <div className="sticky bottom-0 mt-5 -mx-3 md:mx-0 px-3 md:px-0 py-3 bg-gray-50/95 backdrop-blur border-t border-gray-200 md:border-t-0 md:bg-transparent">
         <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
