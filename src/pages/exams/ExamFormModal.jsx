@@ -33,15 +33,6 @@ const ExamFormModal = ({ isOpen, onClose, initialData }) => {
   const { data: classSubjectsData } = useClassSubjects(); // all class-subject pairings
   const { data: teacherSubjectsData } = useTeacherSubjects();
 
-  const selectedClass = classesData?.data?.find(
-    (c) => String(c.id) === String(selectedClassId),
-  );
-  const division = selectedClass
-    ? getDivision(selectedClass.grade_level).key
-    : null;
-
-  const { data: subjectsForDivision } = useSubjectsForClass(division);
-
   const {
     register,
     handleSubmit,
@@ -55,6 +46,15 @@ const ExamFormModal = ({ isOpen, onClose, initialData }) => {
 
   const selectedClassId = useWatch({ control, name: "class_id" });
   const selectedSubjectId = useWatch({ control, name: "subject_id" });
+
+  const selectedClass = classesData?.data?.find(
+    (c) => String(c.id) === String(selectedClassId),
+  );
+  const division = selectedClass
+    ? getDivision(selectedClass.grade).key
+    : null;
+
+  const { data: subjectsForDivision } = useSubjectsForClass(division);
 
   // Only subjects actually offered to the selected class
   const subjectsForClass = (classSubjectsData?.data || []).filter(
