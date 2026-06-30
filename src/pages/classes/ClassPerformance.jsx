@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useClassPerformance } from "../../hooks/useClasses";
-import  SelectField  from "../../components/ui/SelectField";
+import SelectField from "../../components/ui/SelectField";
 import { gradeBadge } from "../../utils/gradeColors";
 import { getDivision } from "../../utils/schoolDivisions";
 import { downloadReportCard } from "../../utils/downloadReportCard";
@@ -18,12 +18,16 @@ import TableSkeleton from "../../components/ui/TableSkeleton";
 import PageHeader from "../../components/ui/PageHeader";
 import ClassPerformancePDF from "./ClassPerformancePDF";
 
-const EXAM_TYPES = ["CAT", "Mid-term", "End-term", "Mock", "Assignment"];
+const EXAM_TYPES = ["Mid-term", "End-term"];
 
 const positionSuffix = (n) => {
-  if (n === 1) return "1st";
-  if (n === 2) return "2nd";
-  if (n === 3) return "3rd";
+  const j = n % 10;
+  const k = n % 100;
+
+  if (j === 1 && k !== 11) return `${n}st`;
+  if (j === 2 && k !== 12) return `${n}nd`;
+  if (j === 3 && k !== 13) return `${n}rd`;
+
   return `${n}th`;
 };
 const ClassPerformance = () => {
