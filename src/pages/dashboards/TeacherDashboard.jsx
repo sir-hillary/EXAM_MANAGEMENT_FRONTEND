@@ -3,8 +3,8 @@ import { ClipboardEdit, BarChart3, Clock } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useTeacherDashboard } from "../../hooks/useDashboardStats";
 import SectionHeader from "../../components/ui/SectionHeader";
-import Spinner from "../../components/ui/spinner";
 import { useResultsByExam } from "../../hooks/useResults";
+import TableSkeleton from "../../components/ui/TableSkeleton";
 
 const examTypeBadge = {
   "Mid-term": "bg-amber-100 text-amber-700",
@@ -47,7 +47,7 @@ const TeacherDashboard = () => {
 
       {isLoading ? (
         <div className="flex justify-center py-16">
-          <Spinner size="lg" />
+          <TableSkeleton rows={8} cols={4} />
         </div>
       ) : exams.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-lg py-12 text-center">

@@ -5,7 +5,6 @@ import { useClasses } from "../../hooks/useClasses";
 import  PageHeader  from "../../components/ui/PageHeader";
 import  DataTable  from "../../components/ui/DataTable";
 import  ConfirmDialog  from "../../components/ui/ConfirmDialog";
-import  Spinner  from "../../components/ui/spinner";
 import  SelectField  from "../../components/ui/SelectField";
 import  ExamFormModal  from "./ExamFormModal";
 import TableSkeleton from "../../components/ui/TableSkeleton";
@@ -88,7 +87,7 @@ const Exams = () => {
 
       {isLoading ? (
         <div className="flex justify-center py-16">
-          <Spinner size="lg" />
+          <TableSkeleton rows={8} cols={4} />
         </div>
       ) : (
         <DataTable

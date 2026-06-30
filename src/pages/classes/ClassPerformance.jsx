@@ -12,11 +12,11 @@ import toast from "react-hot-toast";
 import { useClassPerformance } from "../../hooks/useClasses";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { SelectField } from "../../components/ui/SelectField";
-import { Spinner } from "../../components/ui/spinner";
 import { gradeBadge } from "../../utils/gradeColors";
 import { getDivision } from "../../utils/schoolDivisions";
 import { ClassPerformancePDF } from "./ClassPerformancePDF";
 import { downloadReportCard } from "../../utils/downloadReportCard";
+import TableSkeleton from "../../components/ui/TableSkeleton";
 
 const EXAM_TYPES = ["CAT", "Mid-term", "End-term", "Mock", "Assignment"];
 
@@ -112,7 +112,7 @@ const ClassPerformance = () => {
 
       {isLoading ? (
         <div className="flex justify-center py-16">
-          <Spinner size="lg" />
+          <TableSkeleton rows={8} cols={4} />
         </div>
       ) : isError ? (
         <p className="text-sm text-red-600">{error.message}</p>

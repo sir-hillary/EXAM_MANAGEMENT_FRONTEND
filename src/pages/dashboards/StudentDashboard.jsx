@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
-import { TrendingUp, BookOpen, Award, ArrowRight } from 'lucide-react';
+import { BookOpen, Award, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStudentResults } from '../../hooks/useStudents';
 import  SectionHeader  from '../../components/ui/SectionHeader';
-import  Spinner  from '../../components/ui/spinner';
 import { gradeBadge } from '../../utils/gradeColors';
 import StatCard from '../../components/ui/StartCard';
+import TableSkeleton from '../../components/ui/TableSkeleton';
 
 const gradePoints = { EE1: 8, EE2: 7, ME1: 6, ME2: 5, AE1: 4, AE2: 3, BE1: 2, BE2: 1 };
 
@@ -34,7 +34,7 @@ const StudentDashboard = () => {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+        <div className="flex justify-center py-16"><TableSkeleton rows={8} cols={4} /></div>
       ) : (
         <>
           {/* Stats row */}

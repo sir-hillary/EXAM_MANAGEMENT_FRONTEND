@@ -6,7 +6,7 @@ import { useClasses } from '../../hooks/useClasses';
 import  PageHeader  from '../../components/ui/PageHeader';
 import  DataTable  from '../../components/ui/DataTable';
 import  SelectField  from '../../components/ui/SelectField';
-import  Spinner  from '../../components/ui/spinner';
+import TableSkeleton from '../../components/ui/TableSkeleton';
 
 const examTypeBadge = {
   'Mid-term': 'bg-amber-100 text-amber-700',
@@ -45,7 +45,7 @@ const ExamPicker =() => {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+        <div className="flex justify-center py-16"><TableSkeleton rows={8} cols={4} /></div>
       ) : (
         <DataTable
           columns={columns}

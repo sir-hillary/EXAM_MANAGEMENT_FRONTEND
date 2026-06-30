@@ -13,8 +13,8 @@ import { useClasses } from '../../hooks/useClasses';
 import { useSubjects } from '../../hooks/useSubjects';
 import  DataTable  from '../../components/ui/DataTable';
 import  ConfirmDialog  from '../../components/ui/ConfirmDialog';
-import  Spinner  from '../../components/ui/spinner';
 import  SelectField  from '../../components/ui/SelectField';
+import TableSkeleton from '../../components/ui/TableSkeleton';
 
 const currentAcademicYear = () => {
   const now = new Date();
@@ -132,7 +132,7 @@ const  ClassSubjectsTab = ()=> {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-12"><Spinner size="lg" /></div>
+        <div className="flex justify-center py-12"><TableSkeleton rows={8} cols={4} /></div>
       ) : isError ? (
         <p className="text-sm text-red-600">{error.message}</p>
       ) : (
