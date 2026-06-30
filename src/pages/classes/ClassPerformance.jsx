@@ -50,7 +50,7 @@ const ClassPerformance = () => {
     setDownloading(true);
     try {
       const filename = `${report.class.name}_${examType.replace(/\s+/g, "-")}_Performance.pdf`;
-      await downloadReportCard(pdfRef, filename);
+      await downloadReportCard(pdfRef, filename, 'landscape');
       toast.success("Performance report downloaded");
     } catch {
       toast.error("PDF generation failed — try again");

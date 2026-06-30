@@ -54,10 +54,10 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
     <div
       ref={ref}
       style={{
-        width: "1000px",
+        width: "1100px",
         backgroundColor: "#fff",
         fontFamily: "'Segoe UI', Arial, sans-serif",
-        fontSize: "12px",
+        fontSize: "13px",
         color: "#1f2937",
       }}
     >
@@ -91,7 +91,8 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
             </span>
           </div>
           <div>
-            <div style={{ color: "#fff", fontSize: "20px", fontWeight: "700" }}>
+            // Header — bump up the school name and badge sizes slightly
+            <div style={{ color: "#fff", fontSize: "22px", fontWeight: "700" }}>
               {schoolName}
             </div>
             <div
@@ -218,11 +219,11 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
                 <th
                   key={i}
                   style={{
-                    padding: "8px 10px",
-                    fontSize: "9px",
+                    padding: "9px 11px",
+                    fontSize: "10.5px",
                     fontWeight: "600",
                     color: "#c9a84c",
-                    letterSpacing: "0.6px",
+                    letterSpacing: "0.5px",
                     textTransform: "uppercase",
                     borderBottom: "2px solid #c9a84c",
                     textAlign: i < 3 ? "left" : "center",
@@ -238,7 +239,10 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
             {students.map((s, i) => (
               <tr
                 key={s.student_id}
-                style={{ background: i % 2 === 0 ? "#fff" : "#f8fafc" }}
+                style={{
+                  background: i % 2 === 0 ? "#fff" : "#f8fafc",
+                  borderBottom: "1px solid #e8edf2",
+                }}
               >
                 <td
                   style={{
@@ -251,10 +255,11 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
                 </td>
                 <td
                   style={{
-                    padding: "7px 10px",
+                    padding: "8px 11px",
                     fontWeight: "500",
                     color: "#0f172a",
                     whiteSpace: "nowrap",
+                    fontSize: "12px",
                   }}
                 >
                   {s.first_name} {s.last_name}
@@ -293,11 +298,11 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
 
                 <td
                   style={{
-                    padding: "7px 10px",
+                    padding: "8px 11px",
                     textAlign: "center",
                     fontWeight: "700",
                     color: "#1a2744",
-                    fontSize: "13px",
+                    fontSize: "14px",
                   }}
                 >
                   {s.total_marks}
