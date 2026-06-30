@@ -14,9 +14,9 @@ import SelectField from "../../components/ui/SelectField";
 import { gradeBadge } from "../../utils/gradeColors";
 import { getDivision } from "../../utils/schoolDivisions";
 import { downloadReportCard } from "../../utils/downloadReportCard";
-import TableSkeleton from "../../components/ui/TableSkeleton";
 import PageHeader from "../../components/ui/PageHeader";
 import ClassPerformancePDF from "./ClassPerformancePDF";
+import Spinner from "../../components/ui/spinner";
 
 const EXAM_TYPES = ["Mid-term", "End-term"];
 
@@ -116,7 +116,7 @@ const ClassPerformance = () => {
 
       {isLoading ? (
         <div className="flex justify-center py-16">
-          <TableSkeleton rows={8} cols={4} />
+          <Spinner size="sm" />
         </div>
       ) : isError ? (
         <p className="text-sm text-red-600">{error.message}</p>
