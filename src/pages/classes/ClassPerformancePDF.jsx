@@ -152,10 +152,10 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
       >
         {[
           { label: "Class", value: cls.name },
-          { label: "Grade", value: `Grade ${cls.grade_level}` },
+          { label: "Grade", value: `Grade ${cls.grade}` },
           {
             label: "Division",
-            value: Number(cls.grade_level) <= 6 ? "Primary" : "Junior School",
+            value: Number(cls.grade) <= 6 ? "Primary" : "Junior School",
           },
           { label: "Exam type", value: examType },
           { label: "Students", value: students.length },

@@ -1,19 +1,24 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Download, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  Loader2,
+  Users,
+  Award,
+  TrendingUp,
+} from "lucide-react";
+import toast from "react-hot-toast";
 import { useClassPerformance } from "../../hooks/useClasses";
-import { useClasses } from "../../hooks/useClasses";
-import PageHeader from "../../components/ui/PageHeader";
-import SelectField from "../../components/ui/SelectField";
-import Spinner from "../../components/ui/spinner";
+import { PageHeader } from "../../components/ui/PageHeader";
+import { SelectField } from "../../components/ui/SelectField";
+import { Spinner } from "../../components/ui/spinner";
 import { gradeBadge } from "../../utils/gradeColors";
 import { getDivision } from "../../utils/schoolDivisions";
-import { useRef } from "react";
-import toast from "react-hot-toast";
+import { ClassPerformancePDF } from "./ClassPerformancePDF";
 import { downloadReportCard } from "../../utils/downloadReportCard";
-import ClassPerformancePDF from "./ClassPerformancePDF";
 
-const EXAM_TYPES = ["Mid-term", "End-term"];
+const EXAM_TYPES = ["CAT", "Mid-term", "End-term", "Mock", "Assignment"];
 
 const positionSuffix = (n) => {
   if (n === 1) return "1st";
@@ -21,7 +26,6 @@ const positionSuffix = (n) => {
   if (n === 3) return "3rd";
   return `${n}th`;
 };
-
 const ClassPerformance = () => {
   const { classId } = useParams();
   const navigate = useNavigate();
@@ -30,10 +34,13 @@ const ClassPerformance = () => {
     classId,
     examType,
   );
-  const { data: classesData } = useClasses({ limit: 100 });
 
   const pdfRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
+
+  const report = data?.data;
+  const division = report ? getDivision(report.class.grade) : null;
+  const isPrimary = report?.division === "primary";
 
   const handleDownload = async () => {
     setDownloading(true);
@@ -47,9 +54,6 @@ const ClassPerformance = () => {
       setDownloading(false);
     }
   };
-
-  const report = data?.data;
-  const division = report?.class ? getDivision(report.class.grade) : null;
 
   return (
     <div>
@@ -118,47 +122,62 @@ const ClassPerformance = () => {
         </div>
       ) : (
         <>
-          {/* Summary strip */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-            {[
-              { label: "Students", value: report.meta.total_students },
-              {
-                label: "Top marks",
-                value: report.students[0]?.total_marks ?? "—",
-              },
-              {
-                label: "Top points",
-                value: report.students[0]?.total_points ?? "—",
-              },
-              {
-                label: "Mean grade",
-                value: report.students[0]?.mean_grade ? (
-                  <span
-                    className={`badge ${gradeBadge(report.students[0].mean_grade)}`}
-                  >
-                    {report.students[0].mean_grade}
-                  </span>
-                ) : (
-                  "—"
-                ),
-              },
-            ].map((s, i) => (
-              <div
-                key={i}
-                className="bg-white border border-gray-200 rounded-lg p-3.5"
-              >
-                <p className="text-xs text-gray-500 uppercase tracking-wide">
-                  {s.label}
-                </p>
-                <p className="text-xl font-semibold text-gray-900 mt-1">
-                  {s.value}
-                </p>
+          {/* ── Rich metadata header — addresses Issue 3 ── */}
+          <div className="bg-white border border-gray-200 rounded-lg p-4 mb-5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="flex items-center gap-2.5">
+                <div className="bg-brand-50 p-2 rounded-md">
+                  <Users size={16} className="text-brand-600" />
+                </div>
+                <div>
+                  <p className="text-base font-semibold text-gray-900">
+                    {report.meta.total_students}
+                  </p>
+                  <p className="text-xs text-gray-500">Sat the exam</p>
+                </div>
               </div>
-            ))}
+              <div className="flex items-center gap-2.5">
+                <div className="bg-green-50 p-2 rounded-md">
+                  <TrendingUp size={16} className="text-green-600" />
+                </div>
+                <div>
+                  <p className="text-base font-semibold text-gray-900">
+                    {report.meta.class_average}
+                  </p>
+                  <p className="text-xs text-gray-500">Class average</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <div className="bg-amber-50 p-2 rounded-md">
+                  <Award size={16} className="text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-base font-semibold text-gray-900">
+                    {report.meta.top_student
+                      ? `${report.meta.top_student.first_name} ${report.meta.top_student.last_name}`
+                      : "—"}
+                  </p>
+                  <p className="text-xs text-gray-500">Top student</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div>
+                  <p className="text-base font-semibold text-blue-600">
+                    {report.meta.boys}
+                  </p>
+                  <p className="text-xs text-gray-500">Boys</p>
+                </div>
+                <div>
+                  <p className="text-base font-semibold text-pink-600">
+                    {report.meta.girls}
+                  </p>
+                  <p className="text-xs text-gray-500">Girls</p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Rankings table */}
-          {/* Desktop */}
+          {/* Desktop rankings table */}
           <div className="hidden md:block bg-white border border-gray-200 rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full table-compact">
@@ -169,7 +188,7 @@ const ClassPerformance = () => {
                     <th>Adm. No.</th>
                     <th>Subjects</th>
                     <th>Total Marks</th>
-                    <th>Total Points</th>
+                    {!isPrimary && <th>Total Points</th>}
                     <th>Mean Grade</th>
                   </tr>
                 </thead>
@@ -200,7 +219,7 @@ const ClassPerformance = () => {
                       <td className="text-gray-500">{s.student_number}</td>
                       <td>{s.subjects_count}</td>
                       <td className="font-semibold">{s.total_marks}</td>
-                      <td>{s.total_points}</td>
+                      {!isPrimary && <td>{s.total_points}</td>}
                       <td>
                         {s.mean_grade ? (
                           <span className={`badge ${gradeBadge(s.mean_grade)}`}>
@@ -256,23 +275,26 @@ const ClassPerformance = () => {
                     Marks:{" "}
                     <strong className="text-gray-800">{s.total_marks}</strong>
                   </span>
-                  <span>
-                    Points:{" "}
-                    <strong className="text-gray-800">{s.total_points}</strong>
-                  </span>
+                  {!isPrimary && (
+                    <span>
+                      Points:{" "}
+                      <strong className="text-gray-800">
+                        {s.total_points}
+                      </strong>
+                    </span>
+                  )}
                   <span>Subjects: {s.subjects_count}</span>
                 </div>
               </div>
             ))}
           </div>
 
-          {report && (
-            <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
-              <div ref={pdfRef}>
-                <ClassPerformancePDF data={report} examType={examType} />
-              </div>
+          {/* Hidden PDF render target */}
+          <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
+            <div ref={pdfRef}>
+              <ClassPerformancePDF data={report} examType={examType} />
             </div>
-          )}
+          </div>
         </>
       )}
     </div>
