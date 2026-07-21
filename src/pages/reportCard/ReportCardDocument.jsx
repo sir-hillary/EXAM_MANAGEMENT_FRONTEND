@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 
-const GRADE_COLORS = {
+    const GRADE_COLORS = {
   EE1: "#16a34a",
   EE2: "#22c55e",
   ME1: "#059669",
@@ -25,15 +25,14 @@ const gradePoints = {
 const positionSuffix = (n) => {
   const j = n % 10;
   const k = n % 100;
-
   if (j === 1 && k !== 11) return `${n}st`;
   if (j === 2 && k !== 12) return `${n}nd`;
   if (j === 3 && k !== 13) return `${n}rd`;
-
   return `${n}th`;
 };
 
-const cell = (content, extra = {}) => ({
+// Fixed: first arg is always the style override object, no unused content param
+const cell = (extra = {}) => ({
   padding: "9px 12px",
   fontSize: "12px",
   color: "#1f2937",
@@ -43,7 +42,7 @@ const cell = (content, extra = {}) => ({
 });
 
 const calculateMeanGrade = (grades) => {
-  if (!grades.length) return "—";
+  if (!grades || !grades.length) return "—";
   const avg =
     grades.reduce((s, g) => s + (gradePoints[g] ?? 0), 0) / grades.length;
   const sorted = Object.entries(gradePoints).sort((a, b) => b[1] - a[1]);
@@ -64,8 +63,16 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
 
   const { student, subjects, summary } = report;
   const isPrimary = report.division === "primary";
+  const meanGrade =
+    summary.mean_grade || calculateMeanGrade(subjects.map((s) => s.grade));
+  const generatedOn = new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
-  // Table headers — conditional Points column
+  // ── Table header definition ───────────────────────────────────────────────
   const headers = isTermReport
     ? isPrimary
       ? [
@@ -74,7 +81,7 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
           "Midterm",
           "Endterm",
           "Average",
-          "Percentage",
+          "%",
           "Remarks",
           "Performance",
           "Grade",
@@ -82,9 +89,10 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
       : [
           "Subject",
           "Code",
-          "Marks",
-          "Out of",
-          "Percentage",
+          "Midterm",
+          "Endterm",
+          "Average",
+          "%",
           "Points",
           "Performance",
           "Grade",
@@ -93,8 +101,9 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
       ? [
           "Subject",
           "Code",
-          "marks",
-          "Percentage",
+          "Marks",
+          "Out of",
+          "%",
           "Remarks",
           "Performance",
           "Grade",
@@ -104,12 +113,13 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
           "Code",
           "Marks",
           "Out of",
-          "Percentage",
+          "%",
           "Points",
           "Performance",
           "Grade",
         ];
 
+  // ── Summary strip stats ───────────────────────────────────────────────────
   const summaryStats = isPrimary
     ? [
         { label: "Subjects", value: summary.subjects_count },
@@ -127,17 +137,421 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
         { label: "Average", value: `${summary.average_percentage}%` },
       ];
 
-  const meanGrade =
-    summary.mean_grade || calculateMeanGrade(subjects.map((s) => s.grade));
-  const generatedOn = new Date().toLocaleDateString(undefined, {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  // ── Subject row renderer ──────────────────────────────────────────────────
+  const renderRow = (row, i) => {
+    const displayMarks = isTermReport
+      ? (row.average_marks ?? row.marks_obtained)
+      : row.marks_obtained;
+    const pct =
+      row.percentage ??
+      parseFloat(((displayMarks / row.max_marks) * 100).toFixed(1));
+    const even = i % 2 === 0;
+    const gradeColor = GRADE_COLORS[row.grade] || "#94a3b8";
 
-  console.log(report);
-  console.log(report.subjects);
+    // ── Combined subtotal row (e.g. English COMBINED) ──────────────────────
+    if (row.is_combined) {
+      return (
+        <tr
+          key={`combined-${row.subject_id}-${i}`}
+          style={{ background: "#f0f4f8", borderTop: "1px solid #c9a84c" }}
+        >
+          <td style={cell({ fontWeight: "700", color: "#1a2744" })}>
+            {row.subject_name}
+            <span
+              style={{
+                marginLeft: "6px",
+                fontSize: "10px",
+                color: "#c9a84c",
+                fontWeight: "600",
+                letterSpacing: "0.5px",
+              }}
+            >
+              COMBINED
+            </span>
+          </td>
+          <td style={cell({ textAlign: "center" })}>
+            <span
+              style={{
+                background: "#1a2744",
+                color: "#c9a84c",
+                padding: "2px 8px",
+                borderRadius: "10px",
+                fontSize: "10px",
+                fontWeight: "600",
+              }}
+            >
+              {row.subject_code}
+            </span>
+          </td>
+
+          {/* Midterm / Endterm columns — term report only */}
+          {isTermReport && (
+            <>
+              <td style={cell({ textAlign: "center", color: "#64748b" })}>
+                {row.midterm_marks ?? "—"}
+              </td>
+              <td style={cell({ textAlign: "center", color: "#64748b" })}>
+                {row.endterm_marks ?? "—"}
+              </td>
+            </>
+          )}
+
+          {/* Marks / Out of — single exam only */}
+          {!isTermReport && (
+            <>
+              <td
+                style={cell({
+                  textAlign: "center",
+                  fontWeight: "800",
+                  color: "#1a2744",
+                  fontSize: "14px",
+                })}
+              >
+                {displayMarks}
+              </td>
+              <td style={cell({ textAlign: "center", color: "#64748b" })}>
+                {row.max_marks}
+              </td>
+            </>
+          )}
+
+          {/* Average — term report only */}
+          {isTermReport && (
+            <td
+              style={cell({
+                textAlign: "center",
+                fontWeight: "800",
+                color: "#1a2744",
+                fontSize: "14px",
+              })}
+            >
+              {displayMarks}
+            </td>
+          )}
+
+          <td
+            style={cell({
+              textAlign: "center",
+              fontWeight: "800",
+              color: gradeColor,
+              fontSize: "13px",
+            })}
+          >
+            {pct}%
+          </td>
+
+          {isPrimary ? (
+            <td style={cell({ fontSize: "11px", color: "#475569" })}>
+              {row.subject_remark ?? ""}
+            </td>
+          ) : (
+            <td
+              style={cell({
+                textAlign: "center",
+                fontWeight: "700",
+                color: "#1a2744",
+              })}
+            >
+              {row.points ?? 0} / 8
+            </td>
+          )}
+
+          {/* Empty performance bar cell on combined row */}
+          <td style={cell({ width: "130px" })} />
+
+          <td style={cell({ textAlign: "center" })}>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "28px",
+                height: "28px",
+                borderRadius: "50%",
+                background: gradeColor,
+                color: "#fff",
+                fontSize: "12px",
+                fontWeight: "700",
+              }}
+            >
+              {row.grade}
+            </span>
+          </td>
+        </tr>
+      );
+    }
+
+    // ── Paper sub-row (e.g. ↳ English Paper 1) ────────────────────────────
+    if (row.is_paper_row) {
+      return (
+        <tr
+          key={`paper-${row.subject_id}-${i}`}
+          style={{ background: even ? "#fafbfc" : "#f5f8fa" }}
+        >
+          <td
+            style={cell({
+              color: "#64748b",
+              paddingLeft: "20px",
+              fontSize: "11px",
+            })}
+          >
+            ↳ {row.subject_name}
+          </td>
+          <td style={cell({ textAlign: "center" })}>
+            <span
+              style={{
+                background: "#e2e8f0",
+                color: "#475569",
+                padding: "2px 6px",
+                borderRadius: "8px",
+                fontSize: "9px",
+                fontWeight: "600",
+              }}
+            >
+              {row.subject_code}
+            </span>
+          </td>
+
+          {isTermReport && (
+            <>
+              <td
+                style={cell({
+                  textAlign: "center",
+                  color: "#64748b",
+                  fontSize: "11px",
+                })}
+              >
+                {row.midterm_marks ?? "—"}
+              </td>
+              <td
+                style={cell({
+                  textAlign: "center",
+                  color: "#64748b",
+                  fontSize: "11px",
+                })}
+              >
+                {row.endterm_marks ?? "—"}
+              </td>
+            </>
+          )}
+
+          <td
+            style={cell({
+              textAlign: "center",
+              fontWeight: "600",
+              color: "#334155",
+            })}
+          >
+            {displayMarks}
+          </td>
+
+          {!isTermReport && (
+            <td
+              style={cell({
+                textAlign: "center",
+                color: "#94a3b8",
+                fontSize: "11px",
+              })}
+            >
+              {row.max_marks}
+            </td>
+          )}
+
+          <td
+            style={cell({
+              textAlign: "center",
+              color: "#64748b",
+              fontSize: "11px",
+            })}
+          >
+            {pct}%
+          </td>
+
+          {/* Empty points/remarks cell on paper rows */}
+          <td style={cell({})} />
+
+          <td
+            style={cell({
+              width: "130px",
+              paddingLeft: "14px",
+              paddingRight: "14px",
+            })}
+          >
+            <div
+              style={{
+                background: "#e2e8f0",
+                borderRadius: "999px",
+                height: "6px",
+                overflow: "hidden",
+                position: "relative",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: `${Math.min(pct * 2, 100)}%`,
+                  background: "#94a3b8",
+                  borderRadius: "999px",
+                }}
+              />
+            </div>
+          </td>
+
+          <td style={cell({ textAlign: "center" })}>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "22px",
+                height: "22px",
+                borderRadius: "50%",
+                background: gradeColor,
+                color: "#fff",
+                fontSize: "10px",
+                fontWeight: "600",
+              }}
+            >
+              {row.grade}
+            </span>
+          </td>
+        </tr>
+      );
+    }
+
+    // ── Regular subject row ────────────────────────────────────────────────
+    return (
+      <tr
+        key={`subject-${row.subject_id}-${i}`}
+        style={{ background: even ? "#fff" : "#f8fafc" }}
+      >
+        <td style={cell({ fontWeight: "500", color: "#0f172a" })}>
+          {row.subject_name}
+        </td>
+        <td style={cell({ textAlign: "center" })}>
+          <span
+            style={{
+              background: "#e2e8f0",
+              color: "#475569",
+              padding: "2px 8px",
+              borderRadius: "10px",
+              fontSize: "10px",
+              fontWeight: "600",
+            }}
+          >
+            {row.subject_code}
+          </span>
+        </td>
+
+        {isTermReport && (
+          <>
+            <td style={cell({ textAlign: "center", color: "#64748b" })}>
+              {row.midterm_marks ?? "—"}
+            </td>
+            <td style={cell({ textAlign: "center", color: "#64748b" })}>
+              {row.endterm_marks ?? "—"}
+            </td>
+          </>
+        )}
+
+        <td
+          style={cell({
+            textAlign: "center",
+            fontWeight: "700",
+            color: "#1a2744",
+            fontSize: "13px",
+          })}
+        >
+          {displayMarks}
+        </td>
+
+        {!isTermReport && (
+          <td style={cell({ textAlign: "center", color: "#64748b" })}>
+            {row.max_marks}
+          </td>
+        )}
+
+        <td
+          style={cell({
+            textAlign: "center",
+            fontWeight: "700",
+            fontSize: "13px",
+            color: gradeColor,
+          })}
+        >
+          {pct}%
+        </td>
+
+        {isPrimary ? (
+          <td style={cell({ fontSize: "11px", color: "#475569" })}>
+            {row.subject_remark ?? ""}
+          </td>
+        ) : (
+          <td
+            style={cell({
+              textAlign: "center",
+              fontWeight: "700",
+              color: "#1a2744",
+            })}
+          >
+            {row.points ?? 0} / 8
+          </td>
+        )}
+
+        <td
+          style={cell({
+            width: "130px",
+            paddingLeft: "14px",
+            paddingRight: "14px",
+          })}
+        >
+          <div
+            style={{
+              background: "#e2e8f0",
+              borderRadius: "999px",
+              height: "8px",
+              overflow: "hidden",
+              position: "relative",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: `${Math.min(pct, 100)}%`,
+                background: gradeColor,
+                borderRadius: "999px",
+              }}
+            />
+          </div>
+        </td>
+
+        <td style={cell({ textAlign: "center" })}>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "28px",
+              height: "28px",
+              borderRadius: "50%",
+              background: gradeColor,
+              color: "#fff",
+              fontSize: "12px",
+              fontWeight: "700",
+            }}
+          >
+            {row.grade}
+          </span>
+        </td>
+      </tr>
+    );
+  };
 
   return (
     <div
@@ -161,60 +575,50 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
             alignItems: "center",
           }}
         >
-          <div>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
             <div
               style={{
+                width: "52px",
+                height: "52px",
+                borderRadius: "50%",
+                backgroundColor: "#c9a84c",
                 display: "flex",
                 alignItems: "center",
-                gap: "14px",
-                marginBottom: "6px",
+                justifyContent: "center",
+                flexShrink: 0,
               }}
             >
-              {/* School crest placeholder */}
-              <div
+              <span
                 style={{
-                  width: "52px",
-                  height: "52px",
-                  borderRadius: "50%",
-                  backgroundColor: "#c9a84c",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
+                  color: "#1a2744",
+                  fontWeight: "800",
+                  fontSize: "18px",
                 }}
               >
-                <span
-                  style={{
-                    color: "#1a2744",
-                    fontWeight: "800",
-                    fontSize: "18px",
-                  }}
-                >
-                  {schoolName.charAt(0)}
-                </span>
+                {schoolName.charAt(0)}
+              </span>
+            </div>
+            <div>
+              <div
+                style={{
+                  color: "#ffffff",
+                  fontSize: "22px",
+                  fontWeight: "700",
+                  letterSpacing: "-0.3px",
+                }}
+              >
+                {schoolName}
               </div>
-              <div>
-                <div
-                  style={{
-                    color: "#ffffff",
-                    fontSize: "22px",
-                    fontWeight: "700",
-                    letterSpacing: "-0.3px",
-                  }}
-                >
-                  {schoolName}
-                </div>
-                <div
-                  style={{
-                    color: "#c9a84c",
-                    fontSize: "11px",
-                    letterSpacing: "1.5px",
-                    textTransform: "uppercase",
-                    marginTop: "2px",
-                  }}
-                >
-                  {schoolMotto}
-                </div>
+              <div
+                style={{
+                  color: "#c9a84c",
+                  fontSize: "11px",
+                  letterSpacing: "1.5px",
+                  textTransform: "uppercase",
+                  marginTop: "2px",
+                }}
+              >
+                {schoolMotto}
               </div>
             </div>
           </div>
@@ -295,7 +699,6 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
               {student.class_name || "—"}
             </strong>
           </div>
-
           {summary.position && (
             <div
               style={{
@@ -324,8 +727,6 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
             </div>
           )}
         </div>
-
-        {/* Mean grade circle */}
         <div style={{ textAlign: "center" }}>
           <div
             style={{
@@ -365,12 +766,11 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
         </div>
       </div>
 
-      {/* ── Performance summary strip ───────────────────────────────────── */}
+      {/* ── Summary strip ───────────────────────────────────────────────── */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(4, 1fr)",
-          gap: "0",
           borderBottom: "1px solid #e2e8f0",
         }}
       >
@@ -417,13 +817,12 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
         >
           Subject Results
         </div>
-
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ backgroundColor: "#1a2744" }}>
               {headers.map((h, i) => (
                 <th
-                  key={h}
+                  key={`h-${i}`}
                   style={{
                     padding: "9px 12px",
                     textAlign: i >= 2 ? "center" : "left",
@@ -441,275 +840,30 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
             </tr>
           </thead>
           <tbody>
-            {subjects.map((row, i) => {
-              const displayMarks = isTermReport
-                ? row.average_marks
-                : row.marks_obtained;
-              const pct =
-                row.percentage ??
-                parseFloat(((displayMarks / row.max_marks) * 100).toFixed(1));
-              const even = i % 2 === 0;
-
-              {
-                isTermReport && (
-                  <>
-                    <td style={cell({ textAlign: "center", color: "#64748b" })}>
-                      {row.midterm_marks ?? "—"}
-                    </td>
-                    <td style={cell({ textAlign: "center", color: "#64748b" })}>
-                      {row.endterm_marks ?? "—"}
-                    </td>
-                  </>
-                );
-              }
-              <td
-                style={cell({
-                  textAlign: "center",
-                  fontWeight: "700",
-                  color: "#1a2744",
-                  fontSize: "13px",
-                })}
-              >
-                {displayMarks}
-              </td>;
-
-              // Combined subtotal row — rendered with a distinct style
-              if (row.is_combined) {
-                return (
-                  <tr
-                    key={`combined-${row.subject_id}`}
-                    style={{
-                      background: "#f0f4f8",
-                      borderTop: "1px solid #c9a84c",
-                    }}
-                  >
-                    <td
-                      style={cell({
-                        fontWeight: "700",
-                        color: "#1a2744",
-                        fontSize: "12px",
-                      })}
-                    >
-                      {row.subject_name}
-                      <span
-                        style={{
-                          marginLeft: "6px",
-                          fontSize: "10px",
-                          color: "#c9a84c",
-                          fontWeight: "600",
-                          letterSpacing: "0.5px",
-                        }}
-                      >
-                        COMBINED
-                      </span>
-                    </td>
-                    <td style={cell({ textAlign: "center" })}>
-                      <span
-                        style={{
-                          background: "#1a2744",
-                          color: "#c9a84c",
-                          padding: "2px 8px",
-                          borderRadius: "10px",
-                          fontSize: "10px",
-                          fontWeight: "600",
-                        }}
-                      >
-                        {row.subject_code}
-                      </span>
-                    </td>
-                    <td
-                      style={cell({
-                        textAlign: "center",
-                        fontWeight: "800",
-                        color: "#1a2744",
-                        fontSize: "14px",
-                      })}
-                    >
-                      {row.marks_obtained}
-                    </td>
-                    <td style={cell({ textAlign: "center", color: "#64748b" })}>
-                      {row.max_marks}
-                    </td>
-                    <td
-                      style={cell({
-                        textAlign: "center",
-                        fontWeight: "800",
-                        color: GRADE_COLORS[row.grade] || "#1f2937",
-                        fontSize: "13px",
-                      })}
-                    >
-                      {pct}%
-                    </td>
-                    {/* Points or remarks column */}
-                    {isPrimary ? (
-                      <td style={cell({ fontSize: "11px", color: "#475569" })}>
-                        {row.subject_remark}
-                      </td>
-                    ) : (
-                      <td
-                        style={cell({
-                          textAlign: "center",
-                          fontWeight: "700",
-                          color: "#1a2744",
-                        })}
-                      >
-                        {row.points} / 8
-                      </td>
-                    )}
-                    {/* No performance bar on combined row — just the grade circle */}
-                    <td style={cell({ width: "130px" })} />
-                    <td style={cell({ textAlign: "center" })}>
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          width: "28px",
-                          height: "28px",
-                          borderRadius: "50%",
-                          background: GRADE_COLORS[row.grade] || "#94a3b8",
-                          color: "#fff",
-                          fontSize: "12px",
-                          fontWeight: "700",
-                        }}
-                      >
-                        {row.grade}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              }
-
-              // Paper row — slightly indented, lighter styling
-              if (row.is_paper_row) {
-                return (
-                  <tr
-                    key={row.subject_id}
-                    style={{ background: even ? "#fafbfc" : "#f5f8fa" }}
-                  >
-                    <td
-                      style={cell({
-                        color: "#64748b",
-                        paddingLeft: "20px",
-                        fontSize: "11px",
-                      })}
-                    >
-                      ↳ {row.subject_name}
-                    </td>
-                    <td style={cell({ textAlign: "center" })}>
-                      <span
-                        style={{
-                          background: "#e2e8f0",
-                          color: "#475569",
-                          padding: "2px 6px",
-                          borderRadius: "8px",
-                          fontSize: "9px",
-                          fontWeight: "600",
-                        }}
-                      >
-                        {row.subject_code}
-                      </span>
-                    </td>
-                    <td
-                      style={cell({
-                        textAlign: "center",
-                        fontWeight: "600",
-                        color: "#334155",
-                      })}
-                    >
-                      {row.marks_obtained}
-                    </td>
-                    <td
-                      style={cell({
-                        textAlign: "center",
-                        color: "#94a3b8",
-                        fontSize: "11px",
-                      })}
-                    >
-                      {row.max_marks}
-                    </td>
-                    <td
-                      style={cell({
-                        textAlign: "center",
-                        color: "#64748b",
-                        fontSize: "11px",
-                      })}
-                    >
-                      {pct}%
-                    </td>
-                    {isPrimary ? (
-                      <td style={cell({})} />
-                    ) : (
-                      <td style={cell({})} />
-                    )}
-                    <td
-                      style={cell({
-                        width: "130px",
-                        paddingLeft: "14px",
-                        paddingRight: "14px",
-                      })}
-                    >
-                      <div
-                        style={{
-                          background: "#e2e8f0",
-                          borderRadius: "999px",
-                          height: "6px",
-                          overflow: "hidden",
-                          position: "relative",
-                        }}
-                      >
-                        <div
-                          style={{
-                            position: "absolute",
-                            left: 0,
-                            top: 0,
-                            bottom: 0,
-                            width: `${pct * 2}%`,
-                            background: "#94a3b8",
-                            borderRadius: "999px",
-                          }}
-                        />
-                      </div>
-                    </td>
-                    <td style={cell({ textAlign: "center" })}>
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          width: "22px",
-                          height: "22px",
-                          borderRadius: "50%",
-                          background: GRADE_COLORS[row.grade] || "#94a3b8",
-                          color: "#fff",
-                          fontSize: "10px",
-                          fontWeight: "600",
-                        }}
-                      >
-                        {row.grade}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              }
-
-              // Regular subject row — unchanged from existing code
-              return (
-                <tr
-                  key={row.subject_id}
-                  style={{ background: even ? "#fff" : "#f8fafc" }}
+            {subjects && subjects.length > 0 ? (
+              subjects.map((row, i) => renderRow(row, i))
+            ) : (
+              <tr>
+                <td
+                  colSpan={headers.length}
+                  style={{
+                    padding: "20px",
+                    textAlign: "center",
+                    color: "#94a3b8",
+                    fontSize: "12px",
+                  }}
                 >
-                  {/* ... existing regular row JSX unchanged ... */}
-                </tr>
-              );
-            })}
+                  No subject results found
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* After the </table> closing tag and before the remarks/signature section: */}
+      {/* ── Class teacher comment ────────────────────────────────────────── */}
       {summary.teacher_remark && (
-        <div style={{ padding: "0 36px 20px" }}>
+        <div style={{ padding: "0 40px 20px" }}>
           <div
             style={{
               background: "#f8fafc",
@@ -744,7 +898,7 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
         </div>
       )}
 
-      {/* ── Remarks section ─────────────────────────────────────────────── */}
+      {/* ── Remarks + signatures ─────────────────────────────────────────── */}
       <div style={{ padding: "0 40px 28px" }}>
         <div
           style={{
@@ -760,44 +914,27 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
               gap: "24px",
             }}
           >
-            <div>
-              <div
-                style={{
-                  fontSize: "10px",
-                  color: "#94a3b8",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.8px",
-                  marginBottom: "8px",
-                }}
-              >
-                Class Teacher's Remarks
+            {["Class Teacher's Remarks", "Principal's Remarks"].map((label) => (
+              <div key={label}>
+                <div
+                  style={{
+                    fontSize: "10px",
+                    color: "#94a3b8",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.8px",
+                    marginBottom: "8px",
+                  }}
+                >
+                  {label}
+                </div>
+                <div
+                  style={{
+                    borderBottom: "1px solid #cbd5e1",
+                    paddingBottom: "20px",
+                  }}
+                />
               </div>
-              <div
-                style={{
-                  borderBottom: "1px solid #cbd5e1",
-                  paddingBottom: "20px",
-                }}
-              />
-            </div>
-            <div>
-              <div
-                style={{
-                  fontSize: "10px",
-                  color: "#94a3b8",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.8px",
-                  marginBottom: "8px",
-                }}
-              >
-                Principal's Remarks
-              </div>
-              <div
-                style={{
-                  borderBottom: "1px solid #cbd5e1",
-                  paddingBottom: "20px",
-                }}
-              />
-            </div>
+            ))}
           </div>
           <div
             style={{
@@ -807,44 +944,30 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
               gap: "24px",
             }}
           >
-            <div>
-              <div
-                style={{
-                  fontSize: "10px",
-                  color: "#94a3b8",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.8px",
-                  marginBottom: "8px",
-                }}
-              >
-                Class Teacher's Signature &amp; Date
+            {[
+              "Class Teacher's Signature & Date",
+              "Parent / Guardian Signature & Date",
+            ].map((label) => (
+              <div key={label}>
+                <div
+                  style={{
+                    fontSize: "10px",
+                    color: "#94a3b8",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.8px",
+                    marginBottom: "8px",
+                  }}
+                >
+                  {label}
+                </div>
+                <div
+                  style={{
+                    borderBottom: "1px solid #cbd5e1",
+                    paddingBottom: "20px",
+                  }}
+                />
               </div>
-              <div
-                style={{
-                  borderBottom: "1px solid #cbd5e1",
-                  paddingBottom: "20px",
-                }}
-              />
-            </div>
-            <div>
-              <div
-                style={{
-                  fontSize: "10px",
-                  color: "#94a3b8",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.8px",
-                  marginBottom: "8px",
-                }}
-              >
-                Parent / Guardian Signature &amp; Date
-              </div>
-              <div
-                style={{
-                  borderBottom: "1px solid #cbd5e1",
-                  paddingBottom: "20px",
-                }}
-              />
-            </div>
+            ))}
           </div>
         </div>
       </div>
