@@ -15,23 +15,29 @@ const EXAM_TYPES = ["Mid-term", "End-term"];
 
 const schema = z.object({
   title: z.string().min(1, "Title is required").max(200),
+
   class_id: z.coerce.number().int().min(1, "Select a class"),
+
   subject_id: z.coerce.number().int().min(1, "Select a subject"),
+
   teacher_id: z.union([z.coerce.number().int(), z.literal("")]).optional(),
+
   exam_date: z.string().min(1, "Exam date is required"),
+
   total_marks: z.coerce.number().int().min(1).max(1000),
+
   exam_type: z.enum(EXAM_TYPES, {
     errorMap: () => ({ message: "Select an exam type" }),
   }),
+
   term_number: z.coerce
     .number()
     .int()
-    .min(1)
-    .max(3)
-    .withMessage("Select a term"),
+    .min(1, "Select a term")
+    .max(3, "Select a term"),
+
   academic_year: z.string().regex(/^\d{4}\/\d{4}$/, "Format must be 2024/2025"),
 });
-
 const currentAcademicYear = () => {
   const now = new Date();
   const y = now.getFullYear();
