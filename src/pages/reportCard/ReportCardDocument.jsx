@@ -136,6 +136,9 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
     day: "numeric",
   });
 
+  console.log(report);
+  console.log(report.subjects);
+
   return (
     <div
       ref={ref}
