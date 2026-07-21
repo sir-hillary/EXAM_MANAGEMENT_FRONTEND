@@ -9,9 +9,9 @@ import { useClasses } from '../../hooks/useClasses';
 import  PageHeader  from '../../components/ui/PageHeader';
 import  SelectField  from '../../components/ui/SelectField';
 import  Spinner  from '../../components/ui/spinner';
-import { ReportCardDocument } from '../reportcard/ReportCardDocument';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import ReportCardDocument from './ReportCardDocument';
 
 const currentAcademicYear = () => {
   const y = new Date().getFullYear();
