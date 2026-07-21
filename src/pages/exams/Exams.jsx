@@ -16,31 +16,30 @@ const examTypeBadge = {
 
 const Exams = () => {
   const [classFilter, setClassFilter] = useState("");
-  const [termFilter, setTermFilter] = useState("");
-  const [yearFilter, setYearFilter] = useState("");
-  const { data, isLoading, isError, error } = useExams({
-    class_id: classFilter || undefined,
-    term_number: termFilter || undefined,
-    academic_year: yearFilter || undefined,
-  });
-  const { data: classesData } = useClasses({ limit: 100 });
-  const deleteExam = useDeleteExam();
-
-  const [formOpen, setFormOpen] = useState(false);
+  const [termFilter,  setTermFilter]  = useState("");
+  const [yearFilter,  setYearFilter]  = useState("");
+  const [formOpen,    setFormOpen]    = useState(false);
   const [editingExam, setEditingExam] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
+  const { data, isLoading, isError, error } = useExams({
+    class_id:      classFilter || undefined,
+    term_number:   termFilter  || undefined,
+    academic_year: yearFilter  || undefined,
+  });
+
+  const { data: classesData } = useClasses({ limit: 100 });
+  const deleteExam = useDeleteExam();
+
   const columns = [
-    { key: "title", header: "Title" },
-    { key: "class_name", header: "Class" },
+    { key: "title",        header: "Title" },
+    { key: "class_name",   header: "Class" },
     { key: "subject_name", header: "Subject" },
     {
       key: "exam_type",
       header: "Type",
       render: (row) => (
-        <span
-          className={`badge ${examTypeBadge[row.exam_type] || "bg-gray-100 text-gray-700"}`}
-        >
+        <span className={`badge ${examTypeBadge[row.exam_type] || "bg-gray-100 text-gray-700"}`}>
           {row.exam_type}
         </span>
       ),
@@ -50,11 +49,11 @@ const Exams = () => {
       header: "Date",
       render: (row) => new Date(row.exam_date).toLocaleDateString(),
     },
-    { key: "total_marks", header: "Total marks" },
+    { key: "total_marks",   header: "Total marks" },
     {
       key: "term",
       header: "Term",
-      render: (row) => (row.term_number ? `Term ${row.term_number}` : "—"),
+      render: (row) => row.term_number ? `Term ${row.term_number}` : "—",
     },
     {
       key: "academic_year",
@@ -63,10 +62,6 @@ const Exams = () => {
     },
   ];
 
-  if (isLoading) return <TableSkeleton rows={8} cols={4} />;
-
-  if (isError) return <p className="text-sm text-red-600">{error.message}</p>;
-
   return (
     <div>
       <PageHeader
@@ -74,10 +69,7 @@ const Exams = () => {
         description="Schedule and manage exams"
         action={
           <button
-            onClick={() => {
-              setEditingExam(null);
-              setFormOpen(true);
-            }}
+            onClick={() => { setEditingExam(null); setFormOpen(true); }}
             className="btn-primary w-full sm:w-auto justify-center"
           >
             <Plus size={16} /> New exam
@@ -85,23 +77,23 @@ const Exams = () => {
         }
       />
 
-      <div className="mb-4 sm:w-64">
+      {/* Filter bar — flex row on sm+, stacked on mobile */}
+      <div className="flex flex-col sm:flex-row gap-2.5 mb-4">
         <SelectField
           value={classFilter}
           onChange={(e) => setClassFilter(e.target.value)}
+          className="sm:w-48"
         >
           <option value="">All classes</option>
           {classesData?.data?.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
+            <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </SelectField>
 
         <SelectField
           value={termFilter}
           onChange={(e) => setTermFilter(e.target.value)}
-          className="sm:w-32"
+          className="sm:w-36"
         >
           <option value="">All terms</option>
           <option value="1">Term 1</option>
@@ -112,15 +104,16 @@ const Exams = () => {
         <input
           value={yearFilter}
           onChange={(e) => setYearFilter(e.target.value)}
-          placeholder="2024/2025"
-          className="input-field sm:w-32"
+          placeholder="Year e.g. 2024/2025"
+          className="input-field sm:w-40"
         />
       </div>
 
+      {/* Content area — single conditional block */}
       {isLoading ? (
-        <div className="flex justify-center py-16">
-          <TableSkeleton rows={8} cols={4} />
-        </div>
+        <TableSkeleton rows={8} cols={8} />
+      ) : isError ? (
+        <p className="text-sm text-red-600">{error.message}</p>
       ) : (
         <DataTable
           columns={columns}
@@ -129,10 +122,7 @@ const Exams = () => {
           actions={(row) => (
             <>
               <button
-                onClick={() => {
-                  setEditingExam(row);
-                  setFormOpen(true);
-                }}
+                onClick={() => { setEditingExam(row); setFormOpen(true); }}
                 className="text-gray-400 hover:text-brand-600"
                 aria-label="Edit"
               >
