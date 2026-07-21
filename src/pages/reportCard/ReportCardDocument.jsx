@@ -54,6 +54,7 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
   {
     report,
     examType,
+    isTermReport = false,
     schoolName = "MUKURU OUTREACH ACADEMY",
     schoolMotto = "Learning and achieving together",
   },
@@ -62,33 +63,52 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
   if (!report) return null;
 
   const { student, subjects, summary } = report;
-  console.log("REPORT DATA:", report);
-  console.log("DIVISION:", report.division);
-  console.log("IS PRIMARY:", report.division === "primary");
   const isPrimary = report.division === "primary";
 
   // Table headers — conditional Points column
-  const headers = isPrimary
-    ? [
-        "Subject",
-        "Code",
-        "Marks",
-        "Out of",
-        "Percentage",
-        "Remarks",
-        "Performance",
-        "Grade",
-      ]
-    : [
-        "Subject",
-        "Code",
-        "Marks",
-        "Out of",
-        "Percentage",
-        "Points",
-        "Performance",
-        "Grade",
-      ];
+  const headers = isTermReport
+    ? isPrimary
+      ? [
+          "Subject",
+          "Code",
+          "Midterm",
+          "Endterm",
+          "Average",
+          "Percentage",
+          "Remarks",
+          "Performance",
+          "Grade",
+        ]
+      : [
+          "Subject",
+          "Code",
+          "Marks",
+          "Out of",
+          "Percentage",
+          "Points",
+          "Performance",
+          "Grade",
+        ]
+    : isPrimary
+      ? [
+          "Subject",
+          "Code",
+          "marks",
+          "Percentage",
+          "Remarks",
+          "Performance",
+          "Grade",
+        ]
+      : [
+          "Subject",
+          "Code",
+          "Marks",
+          "Out of",
+          "Percentage",
+          "Points",
+          "Performance",
+          "Grade",
+        ];
 
   const summaryStats = isPrimary
     ? [
@@ -419,12 +439,36 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
           </thead>
           <tbody>
             {subjects.map((row, i) => {
+              const displayMarks = isTermReport
+                ? row.average_marks
+                : row.marks_obtained;
               const pct =
                 row.percentage ??
-                parseFloat(
-                  ((row.marks_obtained / row.max_marks) * 100).toFixed(1),
-                );
+                parseFloat(((displayMarks / row.max_marks) * 100).toFixed(1));
               const even = i % 2 === 0;
+
+              {
+                isTermReport && (
+                  <>
+                    <td style={cell({ textAlign: "center", color: "#64748b" })}>
+                      {row.midterm_marks ?? "—"}
+                    </td>
+                    <td style={cell({ textAlign: "center", color: "#64748b" })}>
+                      {row.endterm_marks ?? "—"}
+                    </td>
+                  </>
+                );
+              }
+              <td
+                style={cell({
+                  textAlign: "center",
+                  fontWeight: "700",
+                  color: "#1a2744",
+                  fontSize: "13px",
+                })}
+              >
+                {displayMarks}
+              </td>;
 
               // Combined subtotal row — rendered with a distinct style
               if (row.is_combined) {

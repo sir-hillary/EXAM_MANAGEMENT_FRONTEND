@@ -24,4 +24,10 @@ export const classesApi = {
     apiClient
       .get(`/classes/${id}/performance`, { params: { exam_type: examType } })
       .then((res) => res.data),
+  getTermReportCards: (id, termNumber, academicYear) =>
+    apiClient
+      .get(`/classes/${id}/term-report-cards`, {
+        params: { term_number: termNumber, academic_year: academicYear },
+      })
+      .then((res) => res.data),
 };

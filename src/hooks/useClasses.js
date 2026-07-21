@@ -70,3 +70,12 @@ export const useClassPerformance = (classId, examType) => {
     enabled: !!classId && !!examType,
   });
 };
+
+export const useClassTermReportCards = (classId, termNumber, academicYear) => {
+  return useQuery({
+    queryKey: ['classes', classId, 'term-report-cards', termNumber, academicYear],
+    queryFn: () => classesApi.getTermReportCards(classId, termNumber, academicYear),
+    enabled: !!classId && !!termNumber && !!academicYear,
+    retry: false,
+  });
+};

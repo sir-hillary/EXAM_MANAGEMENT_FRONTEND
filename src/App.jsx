@@ -18,6 +18,8 @@ import MarkEntry from "./pages/results/MarkEntry";
 import ExamSummary from "./pages/results/ExamSummary";
 import ReportCard from "./pages/reportCard/ReportCard";
 import ClassPerformance from "./pages/classes/ClassPerformance";
+import TermReportCard from "./pages/reportCard/TermReportCard";
+import { BulkReportCardDownload } from "./pages/reportCard/BulkReportCardDownload";
 
 const App = () => {
   return (
@@ -47,7 +49,10 @@ const App = () => {
                 element={<ProtectedRoute allowedRoles={["admin", "teacher"]} />}
               >
                 <Route path="/exams" element={<Exams />} />
-                <Route path="/classes/:classId/performance" element={<ClassPerformance />} />
+                <Route
+                  path="/classes/:classId/performance"
+                  element={<ClassPerformance />}
+                />
               </Route>
 
               <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
@@ -62,6 +67,7 @@ const App = () => {
                   path="/results/summary/:examId"
                   element={<ExamSummary />}
                 />
+                <Route path="/bulk-report-cards" element={<BulkReportCardDownload />} />
               </Route>
 
               <Route
@@ -72,6 +78,7 @@ const App = () => {
                 }
               >
                 <Route path="/report-card" element={<ReportCard />} />
+                <Route path="/term-report-card" element={<TermReportCard />} />
               </Route>
             </Route>
           </Route>

@@ -77,3 +77,12 @@ export const useGenderStats = (classId) => {
     queryFn: () => studentsApi.getGenderStats(classId),
   });
 };
+
+export const useStudentTermReportCard = (id, termNumber, academicYear) => {
+  return useQuery({
+    queryKey: ['students', id, 'term-report-card', termNumber, academicYear],
+    queryFn: () => studentsApi.getTermReportCard(id, termNumber, academicYear),
+    enabled: !!id && !!termNumber && !!academicYear,
+    retry: false,
+  });
+};

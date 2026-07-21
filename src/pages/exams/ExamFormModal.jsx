@@ -23,7 +23,20 @@ const schema = z.object({
   exam_type: z.enum(EXAM_TYPES, {
     errorMap: () => ({ message: "Select an exam type" }),
   }),
+  term_number: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(3)
+    .withMessage("Select a term"),
+  academic_year: z.string().regex(/^\d{4}\/\d{4}$/, "Format must be 2024/2025"),
 });
+
+const currentAcademicYear = () => {
+  const now = new Date();
+  const y = now.getFullYear();
+  return now.getMonth() >= 8 ? `${y}/${y + 1}` : `${y - 1}/${y}`;
+};
 
 const ExamFormModal = ({ isOpen, onClose, initialData }) => {
   const isEditing = !!initialData;
@@ -50,9 +63,7 @@ const ExamFormModal = ({ isOpen, onClose, initialData }) => {
   const selectedClass = classesData?.data?.find(
     (c) => String(c.id) === String(selectedClassId),
   );
-  const division = selectedClass
-    ? getDivision(selectedClass.grade).key
-    : null;
+  const division = selectedClass ? getDivision(selectedClass.grade).key : null;
 
   const { data: subjectsForDivision } = useSubjectsForClass(division);
 
@@ -82,6 +93,8 @@ const ExamFormModal = ({ isOpen, onClose, initialData }) => {
               exam_date: "",
               total_marks: 100,
               exam_type: "",
+              term_number: "",
+              academic_year: currentAcademicYear(),
             },
       );
     }
@@ -233,6 +246,35 @@ const ExamFormModal = ({ isOpen, onClose, initialData }) => {
             {errors.total_marks && (
               <p className="mt-1 text-xs text-red-600">
                 {errors.total_marks.message}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <SelectField
+            label="Term"
+            error={errors.term_number?.message}
+            {...register("term_number")}
+          >
+            <option value="">Select term...</option>
+            <option value="1">Term 1</option>
+            <option value="2">Term 2</option>
+            <option value="3">Term 3</option>
+          </SelectField>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Academic year
+            </label>
+            <input
+              className="input-field"
+              placeholder="2024/2025"
+              {...register("academic_year")}
+            />
+            {errors.academic_year && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.academic_year.message}
               </p>
             )}
           </div>

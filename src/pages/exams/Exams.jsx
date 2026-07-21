@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useExams, useDeleteExam } from "../../hooks/useExams";
 import { useClasses } from "../../hooks/useClasses";
-import  PageHeader  from "../../components/ui/PageHeader";
-import  DataTable  from "../../components/ui/DataTable";
-import  ConfirmDialog  from "../../components/ui/ConfirmDialog";
-import  SelectField  from "../../components/ui/SelectField";
-import  ExamFormModal  from "./ExamFormModal";
+import PageHeader from "../../components/ui/PageHeader";
+import DataTable from "../../components/ui/DataTable";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
+import SelectField from "../../components/ui/SelectField";
+import ExamFormModal from "./ExamFormModal";
 import TableSkeleton from "../../components/ui/TableSkeleton";
 
 const examTypeBadge = {
@@ -16,8 +16,12 @@ const examTypeBadge = {
 
 const Exams = () => {
   const [classFilter, setClassFilter] = useState("");
+  const [termFilter, setTermFilter] = useState("");
+  const [yearFilter, setYearFilter] = useState("");
   const { data, isLoading, isError, error } = useExams({
     class_id: classFilter || undefined,
+    term_number: termFilter || undefined,
+    academic_year: yearFilter || undefined,
   });
   const { data: classesData } = useClasses({ limit: 100 });
   const deleteExam = useDeleteExam();
@@ -47,6 +51,16 @@ const Exams = () => {
       render: (row) => new Date(row.exam_date).toLocaleDateString(),
     },
     { key: "total_marks", header: "Total marks" },
+    {
+      key: "term",
+      header: "Term",
+      render: (row) => (row.term_number ? `Term ${row.term_number}` : "—"),
+    },
+    {
+      key: "academic_year",
+      header: "Year",
+      render: (row) => row.academic_year || "—",
+    },
   ];
 
   if (isLoading) return <TableSkeleton rows={8} cols={4} />;
@@ -83,6 +97,24 @@ const Exams = () => {
             </option>
           ))}
         </SelectField>
+
+        <SelectField
+          value={termFilter}
+          onChange={(e) => setTermFilter(e.target.value)}
+          className="sm:w-32"
+        >
+          <option value="">All terms</option>
+          <option value="1">Term 1</option>
+          <option value="2">Term 2</option>
+          <option value="3">Term 3</option>
+        </SelectField>
+
+        <input
+          value={yearFilter}
+          onChange={(e) => setYearFilter(e.target.value)}
+          placeholder="2024/2025"
+          className="input-field sm:w-32"
+        />
       </div>
 
       {isLoading ? (
