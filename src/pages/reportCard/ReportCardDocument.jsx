@@ -124,7 +124,7 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
     ? [
         { label: "Subjects", value: summary.subjects_count },
         { label: "Total Marks", value: summary.total_marks },
-        { label: "Out Of", value: summary.total_possible },
+        { label: "Out Of", value: 600 },
         { label: "Average", value: `${summary.average_percentage}%` },
       ]
     : [
