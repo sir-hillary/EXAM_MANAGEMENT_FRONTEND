@@ -804,7 +804,7 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
       </div>
 
       {/* ── Results table ───────────────────────────────────────────────── */}
-      <div style={{ padding: "24px 40px" }}>
+      <div style={{ padding: "15px 40px" }}>
         <div
           style={{
             fontSize: "10px",
@@ -914,7 +914,7 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
               gap: "24px",
             }}
           >
-            {["Class Teacher's Remarks", "Principal's Remarks"].map((label) => (
+            {["Class Teacher's Remarks", "Head Teacher's Remarks"].map((label) => (
               <div key={label}>
                 <div
                   style={{
