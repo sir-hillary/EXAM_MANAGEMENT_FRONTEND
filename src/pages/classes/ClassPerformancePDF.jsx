@@ -165,6 +165,7 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
           { label: "Division", value: division },
           { label: "Exam",     value: examType },
           { label: "Students", value: students.length },
+          { label: "class teacher", value: cls.class_teacher_name},
         ].map((item, i) => (
           <div key={i}>
             <div style={{ fontSize: "8px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.7px" }}>{item.label}</div>
