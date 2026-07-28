@@ -446,7 +446,7 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
           {schoolName} · Class Performance Report
         </span>
         <span style={{ color: "#c9a84c", fontSize: "10px", fontWeight: "600" }}>
-          CONFIDENTIAL
+          Generated on {generatedOn} by MUKURU OUTREACH ACADEMY EXAM MANAGEMENT SYSTEM
         </span>
       </div>
     </div>
