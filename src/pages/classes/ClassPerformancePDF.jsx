@@ -92,7 +92,7 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
           </div>
           <div>
             // Header — bump up the school name and badge sizes slightly
-            <div style={{ color: "#fff", fontSize: "22px", fontWeight: "700" }}>
+            <div style={{ color: "#fff", fontSize: "24px", fontWeight: "700" }}>
               {schoolName}
             </div>
             <div
@@ -333,7 +333,7 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
 
       {/* Subject performance summary footer */}
       {subjectSummaries && subjectSummaries.length > 0 && (
-        <div style={{ padding: "0 36px 24px" }}>
+        <div style={{ padding: "20px 36px 24px" }}>
           <div
             style={{
               fontSize: "9px",
