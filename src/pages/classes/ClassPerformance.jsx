@@ -49,8 +49,10 @@ const ClassPerformance = () => {
   const handleDownload = async () => {
     setDownloading(true);
     try {
+      const subjectCount = report?.subjectSummaries?.length ?? 0;
+      const orientation = subjectCount > 6 ? "landscape" : "portrait";
       const filename = `${report.class.name}_${examType.replace(/\s+/g, "-")}_Performance.pdf`;
-      await downloadReportCard(pdfRef, filename, 'landscape');
+      await downloadReportCard(pdfRef, filename, orientation);
       toast.success("Performance report downloaded");
     } catch {
       toast.error("PDF generation failed — try again");

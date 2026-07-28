@@ -1,12 +1,17 @@
+// src/utils/downloadReportCard.js
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
-export const downloadReportCard = async (elementRef, filename = 'report-card.pdf', orientation = 'portrait') => {
+export const downloadReportCard = async (
+  elementRef,
+  filename = 'report-card.pdf',
+  orientation = 'portrait'
+) => {
   const element = elementRef.current;
   if (!element) return;
 
   const canvas = await html2canvas(element, {
-    scale: 2.5,                 // bumped from 2 → 2.5 for sharper print text
+    scale: 2.5,
     useCORS: true,
     backgroundColor: '#ffffff',
     logging: false,
@@ -18,13 +23,14 @@ export const downloadReportCard = async (elementRef, filename = 'report-card.pdf
     },
   });
 
-  const imgData = canvas.toDataURL('image/png');
-  const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
-
+  const imgData    = canvas.toDataURL('image/png');
+  const pdf        = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
   const pageWidth  = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
-  const imgWidth   = pageWidth;
-  const imgHeight  = (canvas.height / canvas.width) * imgWidth;
+
+  // Scale image to fit the page width exactly
+  const imgWidth  = pageWidth;
+  const imgHeight = (canvas.height / canvas.width) * imgWidth;
 
   let heightLeft = imgHeight;
   let position   = 0;
@@ -33,7 +39,7 @@ export const downloadReportCard = async (elementRef, filename = 'report-card.pdf
   heightLeft -= pageHeight;
 
   while (heightLeft > 0) {
-    position -= pageHeight;
+    position   -= pageHeight;
     pdf.addPage();
     pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
     heightLeft -= pageHeight;
