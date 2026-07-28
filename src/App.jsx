@@ -19,7 +19,7 @@ import ExamSummary from "./pages/results/ExamSummary";
 import ReportCard from "./pages/reportCard/ReportCard";
 import ClassPerformance from "./pages/classes/ClassPerformance";
 import TermReportCard from "./pages/reportCard/TermReportCard";
-import { BulkReportCardDownload } from "./pages/reportCard/BulkReportCardDownload";
+import  BulkReportCardDownload  from "./pages/reportCard/BulkReportCardDownload";
 
 const App = () => {
   return (
