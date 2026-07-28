@@ -333,7 +333,7 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
 
       {/* Subject performance summary footer */}
       {subjectSummaries && subjectSummaries.length > 0 && (
-        <div style={{ padding: "20px 36px 24px", marginTop: "20px" }}>
+        <div style={{ padding: "20px 36px 24px", marginTop: "35px" }}>
           <div
             style={{
               fontSize: "9px",
