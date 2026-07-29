@@ -149,6 +149,6 @@ export const ChangePasswordModal = ({ isOpen, onClose }) => {
           </button>
         </div>
       </form>
-    </Mod>
+    </Modal>
   );
 };
