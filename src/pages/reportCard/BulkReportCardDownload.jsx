@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/refs */
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Download, Loader2, ArrowLeft, AlertTriangle } from "lucide-react";
@@ -7,9 +8,9 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useClassTermReportCards } from "../../hooks/useClasses";
 import { useClasses } from "../../hooks/useClasses";
-import  PageHeader  from "../../components/ui/PageHeader";
-import  SelectField  from "../../components/ui/SelectField";
-import  Spinner  from '../../components/ui/spinner';
+import PageHeader from "../../components/ui/PageHeader";
+import SelectField from "../../components/ui/SelectField";
+import Spinner from "../../components/ui/spinner";
 import ReportCardDocument from "./ReportCardDocument";
 
 const currentAcademicYear = () => {
@@ -31,11 +32,11 @@ const useOffscreenSlot = () => {
       "position:fixed",
       "left:-9999px",
       "top:0",
-      "width:794px",        // match ReportCardDocument width
+      "width:794px", // match ReportCardDocument width
       "background:#fff",
       "z-index:-1",
       "pointer-events:none",
-      "visibility:hidden",  // hidden from user but still painted by browser
+      "visibility:hidden", // hidden from user but still painted by browser
     ].join(";");
     document.body.appendChild(div);
     slotRef.current = div;
@@ -53,7 +54,7 @@ const useOffscreenSlot = () => {
 // the DOM has actually been composited to screen before html2canvas reads it.
 const waitForPaint = () =>
   new Promise((resolve) =>
-    requestAnimationFrame(() => requestAnimationFrame(resolve))
+    requestAnimationFrame(() => requestAnimationFrame(resolve)),
   );
 
 // ── Capture a DOM element to canvas ──────────────────────────────────────────
@@ -88,13 +89,16 @@ export default function BulkReportCardDownload() {
   const { data: classesData } = useClasses({ limit: 100 });
 
   const [selectedClassId, setSelectedClassId] = useState("");
-  const [termNumber,      setTermNumber]      = useState("1");
-  const [academicYear,    setAcademicYear]    = useState(currentAcademicYear());
-  const [isGenerating,    setIsGenerating]    = useState(false);
-  const [progress,        setProgress]        = useState({ current: 0, total: 0 });
+  const [termNumber, setTermNumber] = useState("1");
+  const [academicYear, setAcademicYear] = useState(currentAcademicYear());
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [closingDate, setClosingDate] = useState("");
+  const [openingDate, setOpeningDate] = useState("");
+  const [classTeacherName, setClassTeacherName] = useState("");
 
   // Current report being rendered into the off-screen slot
-  const [currentReport,   setCurrentReport]   = useState(null);
+  const [currentReport, setCurrentReport] = useState(null);
   const [currentExamType, setCurrentExamType] = useState("");
 
   // Resolves when the ReportCardDocument inside the slot has painted
@@ -102,8 +106,12 @@ export default function BulkReportCardDownload() {
 
   const slotRef = useOffscreenSlot();
 
-  const { data: bulkData, isLoading, isError, error } =
-    useClassTermReportCards(selectedClassId, termNumber, academicYear);
+  const {
+    data: bulkData,
+    isLoading,
+    isError,
+    error,
+  } = useClassTermReportCards(selectedClassId, termNumber, academicYear);
 
   const meta = bulkData?.data;
 
@@ -129,8 +137,12 @@ export default function BulkReportCardDownload() {
     setIsGenerating(true);
     setProgress({ current: 0, total: meta.student_ids.length });
 
-    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-    const pageWidth  = pdf.internal.pageSize.getWidth();
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+    const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
     let isFirst = true;
 
@@ -144,11 +156,13 @@ export default function BulkReportCardDownload() {
         const apiBase = import.meta.env.VITE_API_URL;
         const res = await fetch(
           `${apiBase}/students/${studentId}/term-report-card?term_number=${termNumber}&academic_year=${encodeURIComponent(academicYear)}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${token}` } },
         );
 
         if (!res.ok) {
-          console.warn(`Skipping student ${studentId} — API returned ${res.status}`);
+          console.warn(
+            `Skipping student ${studentId} — API returned ${res.status}`,
+          );
           continue;
         }
 
@@ -168,7 +182,7 @@ export default function BulkReportCardDownload() {
         const canvas = await captureElement(slotRef.current);
 
         // 4. Add to PDF
-        const imgData  = canvas.toDataURL("image/png");
+        const imgData = canvas.toDataURL("image/png");
         const imgWidth = pageWidth;
         const imgHeight = (canvas.height / canvas.width) * imgWidth;
 
@@ -176,12 +190,12 @@ export default function BulkReportCardDownload() {
         isFirst = false;
 
         let heightLeft = imgHeight;
-        let position   = 0;
+        let position = 0;
         pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
 
         while (heightLeft > 0) {
-          position   -= pageHeight;
+          position -= pageHeight;
           pdf.addPage();
           pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
           heightLeft -= pageHeight;
@@ -211,17 +225,20 @@ export default function BulkReportCardDownload() {
   };
 
   // ── Portal: renders the current report card into the off-screen slot ──────
-  const offscreenPortal =
-    slotRef.current && currentReport
-      ? createPortal(
-          <ReportCardDocument
-            report={currentReport}
-            examType={currentExamType}
-            isTermReport={true}
-          />,
-          slotRef.current
-        )
-      : null;
+ const offscreenPortal =
+  slotRef.current && currentReport
+    ? createPortal(
+        <ReportCardDocument
+          report={currentReport}
+          examType={currentExamType}
+          isTermReport={true}
+          classTeacherName={classTeacherName || null}
+          closingDate={closingDate || null}
+          openingDate={openingDate || null}
+        />,
+        slotRef.current
+      )
+    : null;
 
   return (
     <>
@@ -251,7 +268,9 @@ export default function BulkReportCardDownload() {
             >
               <option value="">Select class...</option>
               {classesData?.data?.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
               ))}
             </SelectField>
           </div>
@@ -279,6 +298,41 @@ export default function BulkReportCardDownload() {
               className="input-field"
             />
           </div>
+          <div className="sm:w-48">
+          <label className="block text-xs font-medium text-gray-600 mb-1">
+            Class teacher name
+          </label>
+          <input
+            value={classTeacherName}
+            onChange={(e) => setClassTeacherName(e.target.value)}
+            placeholder="e.g. Mrs. Wanjiku"
+            className="input-field"
+          />
+        </div>
+
+        <div className="sm:w-44">
+          <label className="block text-xs font-medium text-gray-600 mb-1">
+            Closing date
+          </label>
+          <input
+            value={closingDate}
+            onChange={(e) => setClosingDate(e.target.value)}
+            placeholder="e.g. 14th November 2025"
+            className="input-field"
+          />
+        </div>
+
+        <div className="sm:w-44">
+          <label className="block text-xs font-medium text-gray-600 mb-1">
+            Re-opening date
+          </label>
+          <input
+            value={openingDate}
+            onChange={(e) => setOpeningDate(e.target.value)}
+            placeholder="e.g. 6th January 2026"
+            className="input-field"
+          />
+        </div>
         </div>
 
         {/* Safety warning */}
@@ -296,14 +350,18 @@ export default function BulkReportCardDownload() {
             Select a class, term, and year to begin
           </div>
         ) : isLoading ? (
-          <div className="flex justify-center py-12"><Spinner size="lg" /></div>
+          <div className="flex justify-center py-12">
+            <Spinner size="lg" />
+          </div>
         ) : isError ? (
           <div className="bg-white border border-gray-200 rounded-lg py-10 text-center">
             <p className="text-sm text-red-600">{error.message}</p>
           </div>
         ) : meta ? (
           <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
-            <p className="text-lg font-semibold text-gray-900 mb-1">{meta.class.name}</p>
+            <p className="text-lg font-semibold text-gray-900 mb-1">
+              {meta.class.name}
+            </p>
             <p className="text-sm text-gray-500 mb-1">
               Term {meta.term_number} · {meta.academic_year}
             </p>
