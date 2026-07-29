@@ -1,7 +1,8 @@
-import { ChevronDown, Menu, Bell, Search } from "lucide-react";
+import { ChevronDown, Menu, Bell, Search, KeyRound } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { ChangePasswordModal } from "../ui/ChangePasswordModal";
 
 // Map routes to readable breadcrumb labels
 const routeLabels = {
@@ -36,6 +37,7 @@ const Navbar = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const menuRef = useRef(null);
   const navigate = useNavigate();
 
@@ -166,6 +168,16 @@ const Navbar = ({ onMenuClick }) => {
                 <button
                   onClick={() => {
                     setMenuOpen(false);
+                    setChangePasswordOpen(true);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <KeyRound size={14} />
+                  Change password
+                </button>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
                     logout();
                     navigate("/login", { replace: true });
                   }}
@@ -188,6 +200,11 @@ const Navbar = ({ onMenuClick }) => {
                   Log out
                 </button>
               </div>
+
+              <ChangePasswordModal
+                isOpen={changePasswordOpen}
+                onClose={() => setChangePasswordOpen(false)}
+              />
             </div>
           )}
         </div>
