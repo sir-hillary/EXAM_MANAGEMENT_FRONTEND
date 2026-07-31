@@ -13,6 +13,11 @@ const studentSchema = z.object({
   date_of_birth: z.string().optional().or(z.literal("")),
   class_id: z.union([z.coerce.number().int(), z.literal("")]).optional(),
   gender: z.enum(["male", "female", "other", ""]).optional(),
+  parent_email: z
+    .string()
+    .email("Must be a valid email")
+    .optional()
+    .or(z.literal("")),
 });
 
 const StudentFormModal = ({ isOpen, onClose, initialData }) => {
@@ -38,6 +43,7 @@ const StudentFormModal = ({ isOpen, onClose, initialData }) => {
               ...initialData,
               date_of_birth: initialData.date_of_birth?.split("T")[0] || "",
               gender: initialData.gender || "",
+              parent_email: initialData?.parent_email || "",
             }
           : {
               first_name: "",
@@ -46,6 +52,7 @@ const StudentFormModal = ({ isOpen, onClose, initialData }) => {
               date_of_birth: "",
               class_id: "",
               gender: "",
+              parent_email: "",
             },
       );
     }
@@ -61,6 +68,7 @@ const StudentFormModal = ({ isOpen, onClose, initialData }) => {
       date_of_birth: formData.date_of_birth || null,
       class_id: formData.class_id || null,
       gender: formData.gender || null,
+      parent_email: formData.parent_email || null,
     };
     const mutation = isEditing
       ? updateStudent.mutateAsync({ id: initialData.id, payload })
@@ -143,6 +151,28 @@ const StudentFormModal = ({ isOpen, onClose, initialData }) => {
               <option value="female">Female</option>
               <option value="other">Other</option>
             </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Parent / Guardian email
+              <span className="text-gray-400 font-normal ml-1">
+                (used for parent login)
+              </span>
+            </label>
+            <input
+              type="email"
+              className="input-field"
+              placeholder="parent@email.com"
+              {...register("parent_email")}
+            />
+            {errors.parent_email && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.parent_email.message}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-gray-400">
+              One parent email can be linked to multiple children.
+            </p>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">

@@ -1,7 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-
-import Login from "./pages/auth/Login";
 import Dashboard from "./pages/Dashboard";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
@@ -20,13 +18,14 @@ import ReportCard from "./pages/reportCard/ReportCard";
 import ClassPerformance from "./pages/classes/ClassPerformance";
 import TermReportCard from "./pages/reportCard/TermReportCard";
 import  BulkReportCardDownload  from "./pages/reportCard/BulkReportCardDownload";
+import AuthPage from "./pages/auth/AuthPage";
 
 const App = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<AuthPage />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
 
           {/* Any authenticated role */}
