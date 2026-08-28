@@ -17,8 +17,9 @@ import ExamSummary from "./pages/results/ExamSummary";
 import ReportCard from "./pages/reportCard/ReportCard";
 import ClassPerformance from "./pages/classes/ClassPerformance";
 import TermReportCard from "./pages/reportCard/TermReportCard";
-import  BulkReportCardDownload  from "./pages/reportCard/BulkReportCardDownload";
+import BulkReportCardDownload from "./pages/reportCard/BulkReportCardDownload";
 import AuthPage from "./pages/auth/AuthPage";
+import BannerManagement from "./pages/admin/BannerManagement";
 
 const App = () => {
   return (
@@ -66,7 +67,10 @@ const App = () => {
                   path="/results/summary/:examId"
                   element={<ExamSummary />}
                 />
-                <Route path="/bulk-report-cards" element={<BulkReportCardDownload />} />
+                <Route
+                  path="/bulk-report-cards"
+                  element={<BulkReportCardDownload />}
+                />
               </Route>
 
               <Route
@@ -84,6 +88,10 @@ const App = () => {
 
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<NotFound />} />
+
+          <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+            <Route path="/banners" element={<BannerManagement />} />
+          </Route>
         </Routes>
       </AuthProvider>
     </BrowserRouter>

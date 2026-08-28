@@ -1,4 +1,5 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+
 import {
   LayoutDashboard,
   School,
@@ -11,13 +12,16 @@ import {
   BarChart3,
   Award,
   Download,
+  ImageIcon,
   X,
   LogOut,
+  ChevronRight,
 } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
-import { useNavigate } from "react-router-dom";
 
-// ── Nav structure — grouped by section ──────────────────────────────────────
+import { useAuth } from "../../context/AuthContext";
+
+// ── Navigation structure ──────────────────────────────────────────────────────
+
 const navSections = [
   {
     label: "Main",
@@ -46,11 +50,17 @@ const navSections = [
         icon: GraduationCap,
         roles: ["admin"],
       },
+      {
+        to: "/banners",
+        label: "Login Banners",
+        icon: ImageIcon,
+        roles: ["admin"],
+      },
     ],
   },
+
   {
     label: "Academics",
-    roles: ["admin", "teacher"],
     items: [
       {
         to: "/subjects",
@@ -78,6 +88,7 @@ const navSections = [
       },
     ],
   },
+
   {
     label: "Reports",
     items: [
@@ -103,16 +114,19 @@ const navSections = [
   },
 ];
 
-// Role display names for the footer
+// ── Role display names ────────────────────────────────────────────────────────
+
 const roleLabel = {
   admin: "Administrator",
   teacher: "Teacher",
   student: "Student",
 };
 
-// Initials from email
+// ── Generate initials from email ──────────────────────────────────────────────
+
 const initials = (email = "") => {
   const parts = email.split("@")[0].split(/[._-]/);
+
   return (
     parts
       .slice(0, 2)
@@ -120,6 +134,8 @@ const initials = (email = "") => {
       .join("") || "??"
   );
 };
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
 
 const Sidebar = ({ open, onClose }) => {
   const { role, user, logout } = useAuth();
@@ -132,183 +148,342 @@ const Sidebar = ({ open, onClose }) => {
 
   return (
     <>
-      {/* Mobile backdrop */}
+      {/* ── Mobile backdrop ──────────────────────────────────────────────── */}
       {open && (
         <div
           onClick={onClose}
           className="fixed inset-0 z-20 md:hidden"
-          style={{ background: "rgba(0,0,0,0.45)" }}
+          style={{ background: "rgba(0,0,0,0.48)" }}
         />
       )}
 
+      {/* ── Sidebar ──────────────────────────────────────────────────────── */}
       <aside
-        style={{ background: "#1a3a2a", width: "224px" }}
         className={`
-          fixed md:sticky top-0 left-0 h-screen shrink-0
-          flex flex-col z-30 transition-transform duration-200
-          ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0
+          fixed md:sticky top-0 left-0
+          h-screen w-[248px] shrink-0
+          flex flex-col z-30
+          transition-transform duration-200
+          ${open ? "translate-x-0" : "-translate-x-full"}
+          md:translate-x-0
         `}
+        style={{
+          background: "#1a3a2a",
+          boxShadow: "8px 0 30px rgba(0,0,0,0.08)",
+        }}
       >
-        {/* ── Header — school identity ── */}
+
+        {/* ── Header / School identity ──────────────────────────────────── */}
         <div
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
-          className="flex items-center justify-between px-4 py-4"
+          className="px-4 pt-5 pb-4"
+          style={{
+            borderBottom: "1px solid rgba(255,255,255,0.07)",
+          }}
         >
-          <div className="flex items-center gap-2.5 min-w-0">
-            {/* School initial badge */}
-            <div
-              style={{ background: "#c9a84c", color: "#1a3a2a", flexShrink: 0 }}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
+          <div className="flex items-center justify-between">
+
+            <div className="flex items-center gap-3 min-w-0">
+
+              {/* School logo */}
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{
+                  background:
+                    "linear-gradient(135deg,#c9a84c,#e8cc85)",
+                  color: "#1a3a2a",
+                  boxShadow:
+                    "0 5px 16px rgba(201,168,76,0.22)",
+                }}
+              >
+                <GraduationCap
+                  size={21}
+                  strokeWidth={2.5}
+                />
+              </div>
+
+              {/* School name */}
+              <div className="min-w-0">
+                <p
+                  className="font-bold leading-tight truncate"
+                  style={{
+                    color: "#f1f8f3",
+                    fontSize: "12px",
+                  }}
+                >
+                  Mukuru Outreach Academy
+                </p>
+
+                <p
+                  className="mt-1 truncate"
+                  style={{
+                    color: "rgba(200,220,205,0.48)",
+                    fontSize: "9px",
+                    letterSpacing: "0.7px",
+                  }}
+                >
+                  EXAM MANAGEMENT SYSTEM
+                </p>
+              </div>
+            </div>
+
+            {/* Mobile close button */}
+            <button
+              type="button"
+              onClick={onClose}
+              className="md:hidden ml-2 shrink-0 hover:text-white transition-colors"
+              style={{
+                color: "rgba(200,220,205,0.5)",
+              }}
+              aria-label="Close menu"
             >
-              M
-            </div>
-            <div className="min-w-0">
-              <p
-                style={{
-                  color: "#e8f5e9",
-                  fontSize: "11px",
-                  lineHeight: "1.3",
-                }}
-                className="font-semibold leading-tight truncate"
-              >
-                Mukuru Outreach Academy
-              </p>
-              <p
-                style={{
-                  color: "rgba(200,220,205,0.45)",
-                  fontSize: "9px",
-                  letterSpacing: "0.3px",
-                }}
-              >
-                Learning · Achieving · Together
-              </p>
-            </div>
+              <X size={17} />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            style={{ color: "rgba(200,220,205,0.5)" }}
-            className="md:hidden hover:text-white transition-colors ml-2 shrink-0"
-            aria-label="Close menu"
+
+          {/* Portal indicator */}
+          <div
+            className="mt-4 flex items-center gap-2 px-3 py-2 rounded-lg"
+            style={{
+              background: "rgba(255,255,255,0.045)",
+              border: "1px solid rgba(255,255,255,0.06)",
+            }}
           >
-            <X size={16} />
-          </button>
+            <span
+              className="w-1.5 h-1.5 rounded-full shrink-0"
+              style={{ background: "#c9a84c" }}
+            />
+
+            <span
+              className="text-[10px] font-medium"
+              style={{
+                color: "rgba(225,240,228,0.58)",
+              }}
+            >
+              Academic Administration Portal
+            </span>
+          </div>
         </div>
 
-        {/* ── Nav sections ── */}
-        <nav className="flex-1 overflow-y-auto py-3 px-2">
-          {navSections.map((section) => {
+        {/* ── Navigation ─────────────────────────────────────────────────── */}
+        <nav className="flex-1 overflow-y-auto px-3 py-5">
+
+          {navSections.map((section, sectionIndex) => {
             const visibleItems = section.items.filter((item) =>
-              item.roles.includes(role),
+              item.roles.includes(role)
             );
+
             if (visibleItems.length === 0) return null;
 
             return (
-              <div key={section.label} className="mb-3">
-                <p
-                  style={{
-                    color: "rgba(200,220,205,0.35)",
-                    fontSize: "9px",
-                    letterSpacing: "1.2px",
-                  }}
-                  className="uppercase font-semibold px-3 py-1.5"
-                >
-                  {section.label}
-                </p>
+              <div
+                key={section.label}
+                className={sectionIndex > 0 ? "mt-6" : ""}
+              >
 
-                <div className="space-y-0.5">
-                  {visibleItems.map(({ to, label, icon: Icon }) => (
-                    <NavLink
-                      key={to}
-                      to={to}
-                      onClick={onClose}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors group"
-                      style={({ isActive }) =>
-                        isActive
-                          ? {
-                              background: "rgba(201,168,76,0.16)",
-                              color: "#c9a84c",
-                            }
-                          : { color: "rgba(220,240,225,0.65)" }
-                      }
-                    >
-                      {({ isActive }) => (
-                        <>
-                          <Icon
-                            size={16}
-                            style={{
-                              color: isActive
-                                ? "#c9a84c"
-                                : "rgba(200,225,210,0.45)",
-                              flexShrink: 0,
-                            }}
-                          />
-                          <span style={{ fontWeight: isActive ? 500 : 400 }}>
-                            {label}
-                          </span>
-                          {isActive && (
-                            <span
+                {/* Section heading */}
+                <div className="flex items-center gap-2 px-3 mb-2">
+
+                  <span
+                    className="font-bold uppercase"
+                    style={{
+                      color: "rgba(200,220,205,0.34)",
+                      fontSize: "9px",
+                      letterSpacing: "1.4px",
+                    }}
+                  >
+                    {section.label}
+                  </span>
+
+                  <div
+                    className="flex-1 h-px"
+                    style={{
+                      background: "rgba(255,255,255,0.045)",
+                    }}
+                  />
+                </div>
+
+                {/* Navigation items */}
+                <div className="space-y-1">
+
+                  {visibleItems.map(
+                    ({ to, label, icon: Icon }) => (
+                      <NavLink
+                        key={to}
+                        to={to}
+                        onClick={onClose}
+                        className="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200"
+                        style={({ isActive }) =>
+                          isActive
+                            ? {
+                                background:
+                                  "linear-gradient(90deg, rgba(201,168,76,0.17), rgba(201,168,76,0.07))",
+                                color: "#e8cc85",
+                                boxShadow:
+                                  "inset 0 0 0 1px rgba(201,168,76,0.08)",
+                              }
+                            : {
+                                color:
+                                  "rgba(220,240,225,0.64)",
+                              }
+                        }
+                      >
+                        {({ isActive }) => (
+                          <>
+                            {/* Active indicator */}
+                            {isActive && (
+                              <span
+                                className="absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full"
+                                style={{
+                                  width: "3px",
+                                  height: "22px",
+                                  background: "#c9a84c",
+                                  boxShadow:
+                                    "0 0 8px rgba(201,168,76,0.45)",
+                                }}
+                              />
+                            )}
+
+                            {/* Icon container */}
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors"
                               style={{
-                                marginLeft: "auto",
-                                width: "4px",
-                                height: "4px",
-                                borderRadius: "50%",
-                                background: "#c9a84c",
-                                flexShrink: 0,
+                                background: isActive
+                                  ? "rgba(201,168,76,0.13)"
+                                  : "rgba(255,255,255,0.025)",
                               }}
-                            />
-                          )}
-                        </>
-                      )}
-                    </NavLink>
-                  ))}
+                            >
+                              <Icon
+                                size={16}
+                                strokeWidth={isActive ? 2.2 : 1.8}
+                                style={{
+                                  color: isActive
+                                    ? "#c9a84c"
+                                    : "rgba(200,225,210,0.48)",
+                                }}
+                              />
+                            </div>
+
+                            {/* Label */}
+                            <span
+                              className="flex-1 truncate"
+                              style={{
+                                fontSize: "13px",
+                                fontWeight: isActive ? 600 : 450,
+                              }}
+                            >
+                              {label}
+                            </span>
+
+                            {/* Active arrow */}
+                            {isActive && (
+                              <ChevronRight
+                                size={14}
+                                style={{
+                                  color: "#c9a84c",
+                                  opacity: 0.8,
+                                }}
+                              />
+                            )}
+                          </>
+                        )}
+                      </NavLink>
+                    )
+                  )}
+
                 </div>
               </div>
             );
           })}
         </nav>
 
-        {/* ── Footer — user identity + logout ── */}
+        {/* ── User footer ────────────────────────────────────────────────── */}
         <div
-          style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
-          className="px-2 py-3"
+          className="px-3 pt-3 pb-4"
+          style={{
+            borderTop: "1px solid rgba(255,255,255,0.07)",
+          }}
         >
+
           <div
-            style={{ borderRadius: "10px" }}
-            className="flex items-center gap-2.5 px-3 py-2 group"
+            className="rounded-xl p-2.5"
+            style={{
+              background: "rgba(255,255,255,0.045)",
+              border: "1px solid rgba(255,255,255,0.055)",
+            }}
           >
-            {/* Avatar */}
-            <div
-              style={{
-                background: "#2d5a3e",
-                border: "1px solid rgba(201,168,76,0.3)",
-                color: "#c9a84c",
-                flexShrink: 0,
-              }}
-              className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-            >
-              {initials(user?.email)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p
-                style={{ color: "#e8f5e9", fontSize: "12px" }}
-                className="font-medium truncate"
+            <div className="flex items-center gap-2.5">
+
+              {/* Avatar */}
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
+                style={{
+                  background:
+                    "linear-gradient(135deg,#2d5a3e,#244b34)",
+                  border: "1px solid rgba(201,168,76,0.38)",
+                  color: "#e8cc85",
+                }}
               >
-                {user?.email}
-              </p>
-              <p style={{ color: "rgba(200,220,205,0.45)", fontSize: "10px" }}>
-                {roleLabel[role] ?? role}
-              </p>
+                {initials(user?.email)}
+              </div>
+
+              {/* User details */}
+              <div className="flex-1 min-w-0">
+                <p
+                  className="truncate font-semibold"
+                  style={{
+                    color: "#e8f5e9",
+                    fontSize: "11px",
+                  }}
+                  title={user?.email}
+                >
+                  {user?.email}
+                </p>
+
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ background: "#c9a84c" }}
+                  />
+
+                  <p
+                    className="truncate"
+                    style={{
+                      color: "rgba(200,220,205,0.48)",
+                      fontSize: "9px",
+                    }}
+                  >
+                    {roleLabel[role] ?? role}
+                  </p>
+                </div>
+              </div>
+
+              {/* Logout */}
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors hover:bg-red-500/10"
+                style={{
+                  color: "rgba(200,220,205,0.4)",
+                }}
+                aria-label="Log out"
+                title="Log out"
+              >
+                <LogOut size={15} />
+              </button>
             </div>
-            <button
-              onClick={handleLogout}
-              style={{ color: "rgba(200,220,205,0.4)" }}
-              className="hover:text-red-400 transition-colors shrink-0"
-              aria-label="Log out"
-              title="Log out"
-            >
-              <LogOut size={15} />
-            </button>
           </div>
+
+          {/* Small footer label */}
+          <p
+            className="text-center mt-3"
+            style={{
+              color: "rgba(200,220,205,0.22)",
+              fontSize: "8px",
+              letterSpacing: "0.5px",
+            }}
+          >
+            MUKURU OUTREACH ACADEMY
+          </p>
         </div>
       </aside>
     </>
