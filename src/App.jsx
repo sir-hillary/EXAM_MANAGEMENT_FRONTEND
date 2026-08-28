@@ -83,15 +83,14 @@ const App = () => {
                 <Route path="/report-card" element={<ReportCard />} />
                 <Route path="/term-report-card" element={<TermReportCard />} />
               </Route>
+              <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+                <Route path="/banners" element={<BannerManagement />} />
+              </Route>
             </Route>
           </Route>
 
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<NotFound />} />
-
-          <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-            <Route path="/banners" element={<BannerManagement />} />
-          </Route>
         </Routes>
       </AuthProvider>
     </BrowserRouter>
