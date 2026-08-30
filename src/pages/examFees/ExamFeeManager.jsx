@@ -20,7 +20,7 @@ import {
   useBulkSetFees,
 } from "../../hooks/useExamFees";
 
-import { Spinner } from "../../components/ui/Spinner";
+import { Spinner } from "../../components/ui/spinner";
 import { StudentAvatar } from "../../components/ui/StudentAvatar";
 import Modal from "../../components/ui/Modal";
 
@@ -88,7 +88,7 @@ const PaymentModal = ({ isOpen, onClose, student, examId }) => {
       onClose();
     } catch (error) {
       toast.error("Failed to update payment");
-      console.error(error)
+      console.error(error);
     }
   };
 
@@ -285,11 +285,7 @@ const SummaryCard = ({ label, value, icon: Icon, accent }) => {
         <div>
           <p className="text-xs font-medium text-gray-500">{label}</p>
 
-          <p
-            className={`text-2xl font-black mt-1 ${accent}`}
-          >
-            {value}
-          </p>
+          <p className={`text-2xl font-black mt-1 ${accent}`}>{value}</p>
         </div>
 
         <div
@@ -361,9 +357,7 @@ const ExamFeeManager = () => {
               Unable to load exam fees
             </p>
 
-            <p className="text-xs text-red-600 mt-0.5">
-              {error.message}
-            </p>
+            <p className="text-xs text-red-600 mt-0.5">{error.message}</p>
           </div>
         </div>
       </div>
@@ -490,9 +484,7 @@ const ExamFeeManager = () => {
 
         {showBulk && (
           <div className="px-4 pb-4">
-            <div
-              className="pt-4 border-t border-gray-100 flex flex-col sm:flex-row gap-3"
-            >
+            <div className="pt-4 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">
                   KES
@@ -517,8 +509,8 @@ const ExamFeeManager = () => {
             </div>
 
             <p className="text-[11px] text-gray-400 mt-2">
-              This will update the amount due for students associated with
-              this exam.
+              This will update the amount due for students associated with this
+              exam.
             </p>
           </div>
         )}
@@ -534,8 +526,8 @@ const ExamFeeManager = () => {
             </h2>
 
             <p className="text-xs text-gray-500 mt-0.5">
-              {fees.length} student{fees.length !== 1 ? "s" : ""} registered
-              for this exam
+              {fees.length} student{fees.length !== 1 ? "s" : ""} registered for
+              this exam
             </p>
           </div>
         </div>
@@ -584,8 +576,7 @@ const ExamFeeManager = () => {
             <tbody className="divide-y divide-gray-50">
               {fees.map((fee) => {
                 const sc =
-                  statusConfig[fee.payment_status] ||
-                  statusConfig.unpaid;
+                  statusConfig[fee.payment_status] || statusConfig.unpaid;
 
                 const StatusIcon = sc.icon;
 
@@ -627,9 +618,7 @@ const ExamFeeManager = () => {
                     <td className="px-4 py-3.5 text-right">
                       <span className="font-semibold text-gray-700">
                         {Number(fee.amount_due) > 0
-                          ? `KES ${Number(
-                              fee.amount_due
-                            ).toLocaleString()}`
+                          ? `KES ${Number(fee.amount_due).toLocaleString()}`
                           : "—"}
                       </span>
                     </td>
@@ -637,9 +626,7 @@ const ExamFeeManager = () => {
                     <td className="px-4 py-3.5 text-right">
                       <span className="font-semibold text-green-700">
                         {Number(fee.amount_paid) > 0
-                          ? `KES ${Number(
-                              fee.amount_paid
-                            ).toLocaleString()}`
+                          ? `KES ${Number(fee.amount_paid).toLocaleString()}`
                           : "—"}
                       </span>
                     </td>
@@ -647,8 +634,7 @@ const ExamFeeManager = () => {
                     <td className="px-4 py-3.5 text-right">
                       {Number(fee.balance) > 0 ? (
                         <span className="font-bold text-red-600">
-                          KES{" "}
-                          {Number(fee.balance).toLocaleString()}
+                          KES {Number(fee.balance).toLocaleString()}
                         </span>
                       ) : (
                         <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-50 text-green-600">
@@ -678,8 +664,7 @@ const ExamFeeManager = () => {
                             "rgba(201,168,76,0.12)";
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.background =
-                            "transparent";
+                          e.currentTarget.style.background = "transparent";
                         }}
                       >
                         Update
@@ -695,9 +680,7 @@ const ExamFeeManager = () => {
         {/* Mobile cards */}
         <div className="md:hidden space-y-3">
           {fees.map((fee) => {
-            const sc =
-              statusConfig[fee.payment_status] ||
-              statusConfig.unpaid;
+            const sc = statusConfig[fee.payment_status] || statusConfig.unpaid;
 
             const StatusIcon = sc.icon;
 
@@ -793,9 +776,7 @@ const ExamFeeManager = () => {
                       }`}
                     >
                       {Number(fee.balance) > 0
-                        ? `KES ${Number(
-                            fee.balance
-                          ).toLocaleString()}`
+                        ? `KES ${Number(fee.balance).toLocaleString()}`
                         : "Cleared"}
                     </p>
                   </div>
