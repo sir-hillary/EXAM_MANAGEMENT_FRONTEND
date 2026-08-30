@@ -17,7 +17,7 @@ import PageHeader from "../../components/ui/PageHeader";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import SelectField from "../../components/ui/SelectField";
 import TableSkeleton from "../../components/ui/TableSkeleton";
-import { StudentFormModal } from "./StudentFormModal";
+import  StudentFormModal  from "./StudentFormModal";
 import { StudentAvatar } from "../../components/ui/StudentAvatar";
 import toast from "react-hot-toast";
 
