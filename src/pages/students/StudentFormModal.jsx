@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Camera,
   Upload,
@@ -12,78 +12,69 @@ import {
   Phone,
   Mail,
   AlertCircle,
-} from 'lucide-react';
-import toast from 'react-hot-toast';
+} from "lucide-react";
+import toast from "react-hot-toast";
 
-import Modal from '../../components/ui/Modal';
-import { useCreateStudent, useUpdateStudent } from '../../hooks/useStudents';
-import { useClasses } from '../../hooks/useClasses';
-import { StudentAvatar } from '../../components/ui/StudentAvatar';
-import { studentsApi } from '../../api/students.api';
+import Modal from "../../components/ui/Modal";
+import { useCreateStudent, useUpdateStudent } from "../../hooks/useStudents";
+import { useClasses } from "../../hooks/useClasses";
+import { StudentAvatar } from "../../components/ui/StudentAvatar";
+import { studentsApi } from "../../api/students.api";
 
 const kenyaPhoneRegex = /^(\+254|254|0)[17]\d{8}$/;
 
 const studentSchema = z.object({
-  first_name: z.string().min(1, 'First name is required').max(100),
-  last_name: z.string().min(1, 'Last name is required').max(100),
-  date_of_birth: z.string().optional().or(z.literal('')),
-  class_id: z.union([z.coerce.number().int(), z.literal('')]).optional(),
-  gender: z.enum(['male', 'female', 'other', '']).optional(),
-  parent_name: z.string().max(150).optional().or(z.literal('')),
+  first_name: z.string().min(1, "First name is required").max(100),
+  last_name: z.string().min(1, "Last name is required").max(100),
+  date_of_birth: z.string().optional().or(z.literal("")),
+  class_id: z.union([z.coerce.number().int(), z.literal("")]).optional(),
+  gender: z.enum(["male", "female", "other", ""]).optional(),
+  parent_name: z.string().max(150).optional().or(z.literal("")),
   parent_email: z
     .string()
-    .email('Must be a valid email')
+    .email("Must be a valid email")
     .optional()
-    .or(z.literal('')),
+    .or(z.literal("")),
   parent_phone: z
     .string()
     .optional()
-    .or(z.literal(''))
-    .refine(
-      (v) => !v || kenyaPhoneRegex.test(v.replace(/\s/g, '')),
-      { message: 'Enter a valid Kenya phone e.g. 0712345678' }
-    ),
+    .or(z.literal(""))
+    .refine((v) => !v || kenyaPhoneRegex.test(v.replace(/\s/g, "")), {
+      message: "Enter a valid Kenya phone e.g. 0712345678",
+    }),
 });
 
 const inputClass =
-  'input-field w-full transition-all focus:border-[#c9a84c] focus:ring-2 focus:ring-[#c9a84c]/10';
+  "input-field w-full transition-all focus:border-[#c9a84c] focus:ring-2 focus:ring-[#c9a84c]/10";
 
 const labelClass =
-  'block text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-1.5';
+  "block text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-1.5";
 
-const errorClass = 'mt-1.5 text-xs text-red-600';
+const errorClass = "mt-1.5 text-xs text-red-600";
 
 const SectionHeader = ({ icon: Icon, title, description }) => (
   <div className="flex items-start gap-3 mb-4">
     <div
       className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
       style={{
-        background: 'rgba(201,168,76,0.12)',
-        color: '#c9a84c',
+        background: "rgba(201,168,76,0.12)",
+        color: "#c9a84c",
       }}
     >
       <Icon size={15} />
     </div>
 
     <div>
-      <h3 className="text-sm font-semibold text-[#1a3a2a]">
-        {title}
-      </h3>
+      <h3 className="text-sm font-semibold text-[#1a3a2a]">{title}</h3>
 
       {description && (
-        <p className="text-xs text-gray-400 mt-0.5">
-          {description}
-        </p>
+        <p className="text-xs text-gray-400 mt-0.5">{description}</p>
       )}
     </div>
   </div>
 );
 
-export const StudentFormModal = ({
-  isOpen,
-  onClose,
-  initialData,
-}) => {
+export const StudentFormModal = ({ isOpen, onClose, initialData }) => {
   const isEditing = !!initialData;
 
   const createStudent = useCreateStudent();
@@ -124,20 +115,19 @@ export const StudentFormModal = ({
       initialData
         ? {
             ...initialData,
-            date_of_birth:
-              initialData.date_of_birth?.split('T')[0] || '',
-            gender: initialData.gender || '',
+            date_of_birth: initialData.date_of_birth?.split("T")[0] || "",
+            gender: initialData.gender || "",
           }
         : {
-            first_name: '',
-            last_name: '',
-            date_of_birth: '',
-            class_id: '',
-            gender: '',
-            parent_name: '',
-            parent_email: '',
-            parent_phone: '',
-          }
+            first_name: "",
+            last_name: "",
+            date_of_birth: "",
+            class_id: "",
+            gender: "",
+            parent_name: "",
+            parent_email: "",
+            parent_phone: "",
+          },
     );
   }, [isOpen, initialData, reset]);
 
@@ -185,45 +175,42 @@ export const StudentFormModal = ({
         try {
           const fd = new FormData();
 
-          fd.append('photo', photoFile);
+          fd.append("photo", photoFile);
 
           await studentsApi.uploadPhoto(studentId, fd);
 
           toast.success(
             isEditing
-              ? 'Student updated with photo'
-              : 'Student added with photo'
+              ? "Student updated with photo"
+              : "Student added with photo",
           );
         } catch {
           toast.error(
-            'Student saved but photo upload failed. You can retry from the edit form.'
+            "Student saved but photo upload failed. You can retry from the edit form.",
           );
         } finally {
           setUploadingPhoto(false);
         }
       } else {
-        toast.success(
-          isEditing ? 'Student updated' : 'Student added'
-        );
+        toast.success(isEditing ? "Student updated" : "Student added");
       }
 
       onClose();
     } catch (err) {
-      toast.error(err.message || 'Save failed');
+      toast.error(err.message || "Save failed");
     }
   };
 
   const isLoading = isSubmitting || uploadingPhoto;
 
   const serverError =
-    createStudent.error?.message ||
-    updateStudent.error?.message;
+    createStudent.error?.message || updateStudent.error?.message;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Edit student' : 'Add new student'}
+      title={isEditing ? "Edit student" : "Add new student"}
       maxWidth="max-w-2xl"
     >
       <div className="max-h-[78vh] overflow-y-auto pr-1 -mr-1">
@@ -231,39 +218,30 @@ export const StudentFormModal = ({
         <div
           className="h-1 rounded-full mb-5"
           style={{
-            background:
-              'linear-gradient(90deg, #1a3a2a, #c9a84c, #1a3a2a)',
+            background: "linear-gradient(90deg, #1a3a2a, #c9a84c, #1a3a2a)",
           }}
         />
 
         {/* ── Server error ────────────────────────────────────────────── */}
         {serverError && (
           <div className="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-            <AlertCircle
-              size={17}
-              className="text-red-500 shrink-0 mt-0.5"
-            />
+            <AlertCircle size={17} className="text-red-500 shrink-0 mt-0.5" />
 
             <div>
               <p className="text-xs font-semibold text-red-700">
                 Unable to save student
               </p>
 
-              <p className="text-xs text-red-600 mt-0.5">
-                {serverError}
-              </p>
+              <p className="text-xs text-red-600 mt-0.5">{serverError}</p>
             </div>
           </div>
         )}
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="space-y-5"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           {/* ── Student photo ──────────────────────────────────────────── */}
           <section
             className="rounded-2xl border border-gray-200 p-4 sm:p-5"
-            style={{ background: '#fbfdfb' }}
+            style={{ background: "#fbfdfb" }}
           >
             <SectionHeader
               icon={Camera}
@@ -279,7 +257,7 @@ export const StudentFormModal = ({
                     alt="Student preview"
                     className="w-[76px] h-[76px] rounded-2xl object-cover"
                     style={{
-                      border: '2px solid rgba(201,168,76,0.5)',
+                      border: "2px solid rgba(201,168,76,0.5)",
                     }}
                   />
                 ) : (
@@ -287,8 +265,8 @@ export const StudentFormModal = ({
                     <StudentAvatar
                       student={
                         initialData || {
-                          first_name: '?',
-                          last_name: '',
+                          first_name: "?",
+                          last_name: "",
                         }
                       }
                       size="lg"
@@ -298,13 +276,11 @@ export const StudentFormModal = ({
 
                 <button
                   type="button"
-                  onClick={() =>
-                    fileInputRef.current?.click()
-                  }
+                  onClick={() => fileInputRef.current?.click()}
                   className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-transform hover:scale-105"
                   style={{
-                    background: '#c9a84c',
-                    color: '#1a3a2a',
+                    background: "#c9a84c",
+                    color: "#1a3a2a",
                   }}
                   aria-label="Change student photo"
                 >
@@ -314,9 +290,7 @@ export const StudentFormModal = ({
 
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-[#1a3a2a]">
-                  {photoPreview
-                    ? 'Photo selected'
-                    : 'No photo selected'}
+                  {photoPreview ? "Photo selected" : "No photo selected"}
                 </p>
 
                 <p className="text-xs text-gray-400 mt-0.5 mb-2">
@@ -325,16 +299,12 @@ export const StudentFormModal = ({
 
                 <button
                   type="button"
-                  onClick={() =>
-                    fileInputRef.current?.click()
-                  }
+                  onClick={() => fileInputRef.current?.click()}
                   className="inline-flex items-center gap-1.5 text-xs font-semibold transition-colors"
-                  style={{ color: '#1a3a2a' }}
+                  style={{ color: "#1a3a2a" }}
                 >
                   <Upload size={12} />
-                  {photoPreview
-                    ? 'Change photo'
-                    : 'Upload photo'}
+                  {photoPreview ? "Change photo" : "Upload photo"}
                 </button>
               </div>
             </div>
@@ -358,38 +328,30 @@ export const StudentFormModal = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelClass}>
-                  First name *
-                </label>
+                <label className={labelClass}>First name *</label>
 
                 <input
                   className={inputClass}
                   placeholder="e.g. Brian"
-                  {...register('first_name')}
+                  {...register("first_name")}
                 />
 
                 {errors.first_name && (
-                  <p className={errorClass}>
-                    {errors.first_name.message}
-                  </p>
+                  <p className={errorClass}>{errors.first_name.message}</p>
                 )}
               </div>
 
               <div>
-                <label className={labelClass}>
-                  Last name *
-                </label>
+                <label className={labelClass}>Last name *</label>
 
                 <input
                   className={inputClass}
                   placeholder="e.g. Otieno"
-                  {...register('last_name')}
+                  {...register("last_name")}
                 />
 
                 {errors.last_name && (
-                  <p className={errorClass}>
-                    {errors.last_name.message}
-                  </p>
+                  <p className={errorClass}>{errors.last_name.message}</p>
                 )}
               </div>
             </div>
@@ -399,13 +361,11 @@ export const StudentFormModal = ({
           {isEditing && initialData?.student_number && (
             <div
               className="rounded-xl border border-gray-200 px-4 py-3"
-              style={{ background: '#f8faf8' }}
+              style={{ background: "#f8faf8" }}
             >
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <label className={labelClass}>
-                    Admission number
-                  </label>
+                  <label className={labelClass}>Admission number</label>
 
                   <div className="font-mono text-sm font-semibold text-[#1a3a2a]">
                     {initialData.student_number}
@@ -415,8 +375,8 @@ export const StudentFormModal = ({
                 <span
                   className="text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full"
                   style={{
-                    background: 'rgba(201,168,76,0.14)',
-                    color: '#8c7020',
+                    background: "rgba(201,168,76,0.14)",
+                    color: "#8c7020",
                   }}
                 >
                   Auto-generated
@@ -439,9 +399,7 @@ export const StudentFormModal = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className={labelClass}>
-                  Date of birth
-                </label>
+                <label className={labelClass}>Date of birth</label>
 
                 <div className="relative">
                   <CalendarDays
@@ -452,23 +410,16 @@ export const StudentFormModal = ({
                   <input
                     type="date"
                     className={`${inputClass} pl-9`}
-                    {...register('date_of_birth')}
+                    {...register("date_of_birth")}
                   />
                 </div>
               </div>
 
               <div>
-                <label className={labelClass}>
-                  Gender
-                </label>
+                <label className={labelClass}>Gender</label>
 
-                <select
-                  className={inputClass}
-                  {...register('gender')}
-                >
-                  <option value="">
-                    Not specified
-                  </option>
+                <select className={inputClass} {...register("gender")}>
+                  <option value="">Not specified</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
                   <option value="other">Other</option>
@@ -476,17 +427,10 @@ export const StudentFormModal = ({
               </div>
 
               <div>
-                <label className={labelClass}>
-                  Class
-                </label>
+                <label className={labelClass}>Class</label>
 
-                <select
-                  className={inputClass}
-                  {...register('class_id')}
-                >
-                  <option value="">
-                    Unassigned
-                  </option>
+                <select className={inputClass} {...register("class_id")}>
+                  <option value="">Unassigned</option>
 
                   {classesData?.data?.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -501,7 +445,7 @@ export const StudentFormModal = ({
           {/* ── Parent / guardian ─────────────────────────────────────── */}
           <section
             className="rounded-2xl border border-gray-200 p-4 sm:p-5"
-            style={{ background: '#fbfdfb' }}
+            style={{ background: "#fbfdfb" }}
           >
             <SectionHeader
               icon={Users}
@@ -511,14 +455,12 @@ export const StudentFormModal = ({
 
             <div className="space-y-4">
               <div>
-                <label className={labelClass}>
-                  Full name
-                </label>
+                <label className={labelClass}>Full name</label>
 
                 <input
                   className={inputClass}
                   placeholder="e.g. Jane Kamau"
-                  {...register('parent_name')}
+                  {...register("parent_name")}
                 />
               </div>
 
@@ -539,14 +481,12 @@ export const StudentFormModal = ({
                   <input
                     className={`${inputClass} pl-9`}
                     placeholder="0712345678"
-                    {...register('parent_phone')}
+                    {...register("parent_phone")}
                   />
                 </div>
 
                 {errors.parent_phone ? (
-                  <p className={errorClass}>
-                    {errors.parent_phone.message}
-                  </p>
+                  <p className={errorClass}>{errors.parent_phone.message}</p>
                 ) : (
                   <p className="mt-1.5 text-[11px] text-gray-400">
                     Accepts 07XXXXXXXX or 01XXXXXXXX
@@ -572,14 +512,12 @@ export const StudentFormModal = ({
                     type="email"
                     className={`${inputClass} pl-9`}
                     placeholder="parent@email.com"
-                    {...register('parent_email')}
+                    {...register("parent_email")}
                   />
                 </div>
 
                 {errors.parent_email ? (
-                  <p className={errorClass}>
-                    {errors.parent_email.message}
-                  </p>
+                  <p className={errorClass}>{errors.parent_email.message}</p>
                 ) : (
                   <p className="mt-1.5 text-[11px] text-gray-400">
                     One parent email can link multiple children.
@@ -605,26 +543,18 @@ export const StudentFormModal = ({
               disabled={isLoading}
               className="w-full sm:w-auto justify-center inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               style={{
-                background: '#1a3a2a',
-                color: '#ffffff',
+                background: "#1a3a2a",
+                color: "#ffffff",
               }}
             >
               {isLoading ? (
                 <>
-                  <span
-                    className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
-                  />
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
 
-                  {uploadingPhoto
-                    ? 'Uploading photo…'
-                    : 'Saving…'}
+                  {uploadingPhoto ? "Uploading photo…" : "Saving…"}
                 </>
               ) : (
-                <>
-                  {isEditing
-                    ? 'Save changes'
-                    : 'Add student'}
-                </>
+                <>{isEditing ? "Save changes" : "Add student"}</>
               )}
             </button>
           </div>
