@@ -30,10 +30,16 @@ export const studentsApi = {
         params: classId ? { class_id: classId } : {},
       })
       .then((res) => res.data),
-      getTermReportCard: (id, termNumber, academicYear) =>
-  apiClient
-    .get(`/students/${id}/term-report-card`, {
-      params: { term_number: termNumber, academic_year: academicYear },
-    })
-    .then(res => res.data),
+  getTermReportCard: (id, termNumber, academicYear) =>
+    apiClient
+      .get(`/students/${id}/term-report-card`, {
+        params: { term_number: termNumber, academic_year: academicYear },
+      })
+      .then((res) => res.data),
+  uploadPhoto: (id, formData) =>
+    apiClient
+      .post(`/students/${id}/photo`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then((r) => r.data),
 };
