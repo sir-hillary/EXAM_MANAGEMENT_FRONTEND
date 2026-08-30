@@ -21,7 +21,7 @@ import {
 } from "../../hooks/useExamFees";
 import { StudentAvatar } from "../../components/ui/StudentAvatar";
 import Modal from "../../components/ui/Modal";
-import { Spinner } from "../../components/ui/spinner";
+import  Spinner  from "../../components/ui/spinner";
 
 const statusConfig = {
   paid: {
