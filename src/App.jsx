@@ -20,6 +20,7 @@ import TermReportCard from "./pages/reportCard/TermReportCard";
 import BulkReportCardDownload from "./pages/reportCard/BulkReportCardDownload";
 import AuthPage from "./pages/auth/AuthPage";
 import BannerManagement from "./pages/admin/BannerManagement";
+import ExamFeeManager from "./pages/examFees/ExamFeeManager";
 
 const App = () => {
   return (
@@ -53,6 +54,7 @@ const App = () => {
                   path="/classes/:classId/performance"
                   element={<ClassPerformance />}
                 />
+                <Route path="/exam-fees/:examId" element={<ExamFeeManager />} />
               </Route>
 
               <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
