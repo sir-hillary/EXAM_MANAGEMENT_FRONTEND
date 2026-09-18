@@ -7,7 +7,7 @@ import { useClasses } from '../../hooks/useClasses';
 import { useSubjects } from '../../hooks/useSubjects';
 import { useTeachers } from '../../hooks/useTeachers';
 import Modal from '../../components/ui/Modal';
-import { Spinner } from '../../components/ui/Spinner';
+import Spinner from '../../components/ui/spinner';
 
 const DAYS    = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const PERIODS = [
