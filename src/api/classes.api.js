@@ -30,4 +30,41 @@ export const classesApi = {
         params: { term_number: termNumber, academic_year: academicYear },
       })
       .then((res) => res.data),
+  // ─────────────────────────────────────────────
+  // Timetable
+  // ─────────────────────────────────────────────
+
+  getTimetable: (classId) =>
+    apiClient.get(`/classes/${classId}/timetable`).then((res) => res.data),
+
+  upsertPeriod: (classId, payload) =>
+    apiClient
+      .put(`/classes/${classId}/timetable/period`, payload)
+      .then((res) => res.data),
+
+  deletePeriod: (classId, payload) =>
+    apiClient
+      .delete(`/classes/${classId}/timetable/period`, {
+        data: payload,
+      })
+      .then((res) => res.data),
+
+  // ─────────────────────────────────────────────
+  // Student archive / restore / permanent delete
+  // ─────────────────────────────────────────────
+
+  archiveStudent: (classId, studentId, reason = null) =>
+    apiClient
+      .patch(`/classes/${classId}/students/${studentId}/archive`, { reason })
+      .then((res) => res.data),
+
+  unarchiveStudent: (classId, studentId) =>
+    apiClient
+      .patch(`/classes/${classId}/students/${studentId}/unarchive`)
+      .then((res) => res.data),
+
+  permanentDeleteStudent: (classId, studentId) =>
+    apiClient
+      .delete(`/classes/${classId}/students/${studentId}`)
+      .then((res) => res.data),
 };
