@@ -50,29 +50,6 @@ import TableSkeleton from "../../components/ui/TableSkeleton";
   return row.exam_type || "Unknown";
   };
 
-/**
-
-* Get the subjects returned by the backend.
-*
-* Backend format:
-*
-* [
-* {
-* ```
-  id,
-  ```
-* ```
-  name,
-  ```
-* ```
-  code,
-  ```
-* ```
-  question_count
-  ```
-* }
-* ]
-  */
   const getSubjects = (row) => {
   return Array.isArray(row.subjects) ? row.subjects : [];
   };
@@ -363,8 +340,6 @@ header: "Exam",
 
 return ( <div className="space-y-5">
 {/* Page header */}
-
-```
   <PageHeader
     title="Exams"
     description="Schedule, organize and manage academic examinations"
