@@ -49,10 +49,7 @@ const resultsApi = {
   | GET /results
   |
   */
-  getMine: () =>
-    apiClient
-      .get("/results")
-      .then((res) => res.data),
+  getMine: () => apiClient.get("/results").then((res) => res.data),
 
   /*
   |--------------------------------------------------------------------------
@@ -62,10 +59,7 @@ const resultsApi = {
   | GET /results/:id
   |
   */
-  getById: (id) =>
-    apiClient
-      .get(`/results/${id}`)
-      .then((res) => res.data),
+  getById: (id) => apiClient.get(`/results/${id}`).then((res) => res.data),
 
   /*
   |--------------------------------------------------------------------------
@@ -78,9 +72,7 @@ const resultsApi = {
   |
   */
   getExamSummary: (examId) =>
-    apiClient
-      .get(`/results/exam/${examId}/summary`)
-      .then((res) => res.data),
+    apiClient.get(`/results/exam/${examId}/summary`).then((res) => res.data),
 
   /*
   |--------------------------------------------------------------------------
@@ -101,9 +93,7 @@ const resultsApi = {
   |
   */
   create: (payload) =>
-    apiClient
-      .post("/results", payload)
-      .then((res) => res.data),
+    apiClient.post("/results", payload).then((res) => res.data),
 
   /*
   |--------------------------------------------------------------------------
@@ -129,9 +119,7 @@ const resultsApi = {
   |
   */
   bulkCreate: (payload) =>
-    apiClient
-      .post("/results/bulk", payload)
-      .then((res) => res.data),
+    apiClient.post("/results/bulk", payload).then((res) => res.data),
 
   /*
   |--------------------------------------------------------------------------
@@ -149,19 +137,14 @@ const resultsApi = {
   |
   */
   patch: (id, payload) =>
-    apiClient
-      .patch(`/results/${id}`, payload)
-      .then((res) => res.data),
+    apiClient.patch(`/results/${id}`, payload).then((res) => res.data),
 
   /*
   |--------------------------------------------------------------------------
   | Delete result
   |--------------------------------------------------------------------------
   */
-  remove: (id) =>
-    apiClient
-      .delete(`/results/${id}`)
-      .then((res) => res.data),
+  remove: (id) => apiClient.delete(`/results/${id}`).then((res) => res.data),
 };
 
 export default resultsApi;
