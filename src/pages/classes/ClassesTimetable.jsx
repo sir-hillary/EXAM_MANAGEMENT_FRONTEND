@@ -220,7 +220,7 @@ const ClassTimetable = () => {
   const canEdit = role === 'admin' ||
     (role === 'teacher' && classInfo?.class_teacher_id === user?.teacher_id);
 
-  const grid = timetableData?.grid ?? {};
+  const grid = timetableData?.data?.grid ?? {};
 
   const getEntry = (day, periodNum) => grid[day]?.[periodNum] ?? null;
 
@@ -368,7 +368,7 @@ const ClassTimetable = () => {
       {/* Legend */}
       <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1">
         <p className="text-xs text-gray-400 w-full mb-1 font-medium">Colour key:</p>
-        {(timetableData?.periods ?? [])
+        {(timetableData?.data?.periods ?? [])
           .filter((p, i, arr) => arr.findIndex(x => x.subject_id === p.subject_id) === i)
           .slice(0, 8)
           .map(p => {
