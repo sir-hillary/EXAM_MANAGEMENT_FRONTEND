@@ -99,9 +99,9 @@ const ReportCard = () => {
     isError,
     error,
   } = useStudentReportCard(selectedStudentId, {
-    termNumber,
-    academicYear,
-    examType,
+    term_number: termNumber,
+    academic_year: academicYear,
+    exam_type: examType,
   });
 
   const report = reportData?.data;

@@ -26,11 +26,12 @@ export const useStudentResults = (id) => {
   });
 };
 
-export const useStudentReportCard = (id, examType) => {
+export const useStudentReportCard = (id, params = {}) => {
   return useQuery({
-    queryKey: ["students", id, "report-card", examType],
-    queryFn: () => studentsApi.getReportCard(id, examType),
-    enabled: !!id && !!examType,
+    queryKey: ["students", id, "report-card", params],
+    queryFn: () => studentsApi.getReportCard(id, params),
+    enabled: !!id && !!params?.term_number && !!params?.academic_year,
+    retry: false,
   });
 };
 
