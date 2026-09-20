@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-query";
 
 import toast from "react-hot-toast";
-import resultsApi from "../api/results.api";
+import { resultsApi } from "../api";
 
 // ─── Error Handler ────────────────────────────────────────
 
