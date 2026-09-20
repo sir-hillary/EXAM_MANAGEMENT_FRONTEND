@@ -82,9 +82,6 @@ const PeriodCell = ({ entry, isBreak, onEdit, canEdit }) => {
         {entry.teacher_name && (
           <p className="text-xs leading-tight mt-0.5 text-gray-500 truncate">{entry.teacher_name}</p>
         )}
-        {entry.room && (
-          <p className="text-xs text-gray-400 mt-0.5">{entry.room}</p>
-        )}
       </div>
     </td>
   );
@@ -102,7 +99,6 @@ const PeriodModal = ({ isOpen, onClose, classId, day, period, entry }) => {
     teacher_id:  entry?.teacher_id  || '',
     start_time:  entry?.start_time  || period?.default_start || '',
     end_time:    entry?.end_time    || period?.default_end   || '',
-    room:        entry?.room        || '',
     notes:       entry?.notes       || '',
   });
 
@@ -115,7 +111,6 @@ const PeriodModal = ({ isOpen, onClose, classId, day, period, entry }) => {
         teacher_id:  form.teacher_id  || null,
         start_time:  form.start_time,
         end_time:    form.end_time,
-        room:        form.room  || null,
         notes:       form.notes || null,
       });
       onClose();
@@ -168,11 +163,6 @@ const PeriodModal = ({ isOpen, onClose, classId, day, period, entry }) => {
             <label className="block text-xs font-medium text-gray-600 mb-1">End time</label>
             <input type="time" className="input-field" value={form.end_time} onChange={set('end_time')} />
           </div>
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Room / Venue</label>
-          <input className="input-field" placeholder="e.g. Room 4, Library..." value={form.room} onChange={set('room')} />
         </div>
 
         <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2 border-t border-gray-100">
@@ -347,7 +337,6 @@ const ClassTimetable = () => {
                       >
                         <p className="text-xs font-bold" style={{ color: col.text }}>{entry.subject_name}</p>
                         {entry.teacher_name && <p className="text-xs text-gray-500 mt-0.5">{entry.teacher_name}</p>}
-                        {entry.room && <p className="text-xs text-gray-400">{entry.room}</p>}
                       </div>
                     ) : (
                       <div className="flex-1 rounded-lg px-3 py-2 border border-dashed border-gray-200">
