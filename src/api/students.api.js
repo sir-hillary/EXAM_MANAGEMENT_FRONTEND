@@ -9,10 +9,17 @@ export const studentsApi = {
   getResults: (id) =>
     apiClient.get(`/students/${id}/results`).then((res) => res.data),
 
-  getReportCard: (id, examType) =>
-    apiClient
-      .get(`/students/${id}/report-card`, { params: { exam_type: examType } })
-      .then((res) => res.data),
+getReportCard: async (
+  studentId,
+  params
+) => {
+  const response = await apiClient.get(
+    `/students/${studentId}/report-card`,
+    { params }
+  );
+
+  return response.data;
+},
 
   create: (payload) =>
     apiClient.post("/students", payload).then((res) => res.data),
