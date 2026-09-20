@@ -5,5 +5,6 @@ export { studentsApi } from "./students.api";
 export { teacherSubjectsApi } from "./teacherSubjects.api";
 export { classSubjectsApi } from "./classSubjects.api";
 export { examsApi } from "./exams.api";
-export { resultsApi } from "./results.api";
+export {resultsApi} from "./results.api"
+
 export { authApi } from "./auth.api";

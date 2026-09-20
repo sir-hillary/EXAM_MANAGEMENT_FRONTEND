@@ -1,6 +1,6 @@
 import apiClient from "./client";
 
-const resultsApi = {
+export const resultsApi = {
   /*
   |--------------------------------------------------------------------------
   | Results by exam
@@ -146,5 +146,3 @@ const resultsApi = {
   */
   remove: (id) => apiClient.delete(`/results/${id}`).then((res) => res.data),
 };
-
-export default resultsApi;
