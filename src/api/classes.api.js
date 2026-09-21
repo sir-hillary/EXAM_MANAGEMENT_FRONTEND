@@ -20,10 +20,14 @@ export const classesApi = {
 
   remove: (id) => apiClient.delete(`/classes/${id}`).then((res) => res.data),
 
-  getPerformance: (id, examType) =>
-    apiClient
-      .get(`/classes/${id}/performance`, { params: { exam_type: examType } })
-      .then((res) => res.data),
+getPerformance: async (classId, params) => {
+  const response = await apiClient.get(
+    `/classes/${classId}/performance`,
+    { params },
+  );
+
+  return response.data;
+},
   getTermReportCards: (id, termNumber, academicYear) =>
     apiClient
       .get(`/classes/${id}/term-report-cards`, {
