@@ -63,19 +63,37 @@ export const useDeleteClass = () => {
   });
 };
 
-export const useClassPerformance = (classId, examType) => {
+export const useClassPerformance = (classId, filters = {}) => {
   return useQuery({
-    queryKey: ['classes', classId, 'performance', examType],
-    queryFn: () => classesApi.getPerformance(classId, examType),
-    enabled: !!classId && !!examType,
+    queryKey: ["classes", classId, "performance", filters],
+
+    queryFn: () => classesApi.getPerformance(classId, filters),
+
+    enabled: Boolean(classId && filters?.exam_type),
+
+    retry: false,
   });
 };
 
-export const useClassTermReportCards = (classId, termNumber, academicYear) => {
+export const useClassTermReportCards = (
+  classId,
+  termNumber,
+  academicYear,
+) => {
   return useQuery({
-    queryKey: ['classes', classId, 'term-report-cards', termNumber, academicYear],
-    queryFn: () => classesApi.getTermReportCards(classId, termNumber, academicYear),
-    enabled: !!classId && !!termNumber && !!academicYear,
+    queryKey: [
+      "classes",
+      classId,
+      "term-report-cards",
+      termNumber,
+      academicYear,
+    ],
+
+    queryFn: () =>
+      classesApi.getTermReportCards(classId, termNumber, academicYear),
+
+    enabled: Boolean(classId && termNumber && academicYear),
+
     retry: false,
   });
 };
