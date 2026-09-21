@@ -49,7 +49,7 @@ const CapacityBar = ({ count = 0, capacity }) => {
       : "#15803d";
 
   return (
-    <div className="flex min-w-[130px] items-center gap-2.5">
+    <div className="flex min-w-32.5 items-center gap-2.5">
       <span className="w-16 shrink-0 text-xs font-medium text-gray-700">
         {count}/{capacity}
       </span>
@@ -360,7 +360,7 @@ const Classes = () => {
                               />
 
                               <div className="min-w-0">
-                                <p className="max-w-[180px] truncate text-sm font-medium text-gray-800">
+                                <p className="max-w-45 truncate text-sm font-medium text-gray-800">
                                   {
                                     classItem.class_teacher_name
                                   }
