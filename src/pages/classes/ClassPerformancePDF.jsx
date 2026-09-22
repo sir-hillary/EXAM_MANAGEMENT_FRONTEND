@@ -11,59 +11,105 @@ const GRADE_COLORS = {
   BE2: "#dc2626",
 };
 
-const positionStyle = (pos) => {
-  if (pos === 1) return { color: "#b45309", fontWeight: "800" };
-  if (pos === 2) return { color: "#64748b", fontWeight: "700" };
-  if (pos === 3) return { color: "#c2410c", fontWeight: "700" };
-  return { color: "#374151", fontWeight: "500" };
+const getDivision = (grade) => {
+  const value = Number(grade);
+
+  if (value >= 4 && value <= 6) return "Primary";
+  if (value >= 7 && value <= 8) return "Junior School";
+
+  return "School";
 };
 
-const positionSuffix = (n) => {
-  const j = n % 10,
-    k = n % 100;
+const positionStyle = (position) => {
+  switch (Number(position)) {
+    case 1:
+      return {
+        background: "#fef3c7",
+        color: "#92400e",
+        border: "1px solid #fde68a",
+      };
+
+    case 2:
+      return {
+        background: "#f1f5f9",
+        color: "#475569",
+        border: "1px solid #cbd5e1",
+      };
+
+    case 3:
+      return {
+        background: "#ffedd5",
+        color: "#9a3412",
+        border: "1px solid #fed7aa",
+      };
+
+    default:
+      return {
+        background: "#f8fafc",
+        color: "#475569",
+        border: "1px solid #e2e8f0",
+      };
+  }
+};
+
+const positionSuffix = (value) => {
+  const n = Number(value);
+
+  if (!Number.isFinite(n) || n < 1) return "—";
+
+  const j = n % 10;
+  const k = n % 100;
+
   if (j === 1 && k !== 11) return `${n}st`;
   if (j === 2 && k !== 12) return `${n}nd`;
   if (j === 3 && k !== 13) return `${n}rd`;
+
   return `${n}th`;
 };
 
-const getColWidths = (subjectCount) => {
-  if (subjectCount <= 6)
-    return { pos: 36, name: 130, adm: 70, subj: 52, total: 52, grade: 46 };
-  if (subjectCount <= 8)
-    return { pos: 32, name: 115, adm: 62, subj: 46, total: 48, grade: 42 };
-  if (subjectCount <= 10)
-    return { pos: 28, name: 100, adm: 56, subj: 40, total: 44, grade: 38 };
-  return { pos: 26, name: 90, adm: 50, subj: 36, total: 42, grade: 36 };
+const getStudentName = (student) =>
+  [student?.first_name, student?.last_name].filter(Boolean).join(" ") ||
+  "Unnamed student";
+
+const formatPercentage = (value) => {
+  if (value === null || value === undefined || value === "") return "—";
+
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) return "—";
+
+  return `${number.toFixed(1)}%`;
 };
 
-const getDivision = (grade) => {
-  const g = Number(grade);
-  if (g >= 4 && g <= 6) return "Primary";
-  if (g >= 7 && g <= 8) return "Junior School";
-  return "Other";
+const formatNumber = (value) => {
+  if (value === null || value === undefined || value === "") return "—";
+
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) return "—";
+
+  return number.toLocaleString();
 };
 
-// ── Key helper: given a student's exam_results array and a subject name,
-// find the percentage the student achieved in any exam that covers that subject.
-// If the subject appears in multiple exams (edge case), return the average.
-const getSubjectPercentage = (examResults = [], subjectName) => {
-  const matching = examResults.filter((er) =>
-    (er.subjects || []).some((s) => s.subject_name === subjectName),
-  );
-  if (matching.length === 0) return null;
-  const avg =
-    matching.reduce((sum, er) => sum + parseFloat(er.percentage || 0), 0) /
-    matching.length;
-  return parseFloat(avg.toFixed(1));
+const getGradeColor = (grade) => {
+  return GRADE_COLORS[grade] || "#64748b";
 };
 
-// ── Get the grade for a subject from exam_results
-const getSubjectGrade = (examResults = [], subjectName) => {
-  const match = examResults.find((er) =>
-    (er.subjects || []).some((s) => s.subject_name === subjectName),
-  );
-  return match?.grade ?? null;
+const getGradeBackground = (grade) => {
+  if (!grade) return "#f1f5f9";
+
+  const colors = {
+    EE1: "#dcfce7",
+    EE2: "#dcfce7",
+    ME1: "#d1fae5",
+    ME2: "#d1fae5",
+    AE1: "#fef3c7",
+    AE2: "#fef3c7",
+    BE1: "#ffedd5",
+    BE2: "#fee2e2",
+  };
+
+  return colors[grade] || "#f1f5f9";
 };
 
 const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
@@ -78,7 +124,21 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
 ) {
   if (!data) return null;
 
-  const { class: cls, students, subjectSummaries } = data;
+  const {
+    class: cls,
+    students = [],
+    division: apiDivision,
+    meta = {},
+  } = data;
+
+  const division =
+    apiDivision === "primary"
+      ? "Primary"
+      : apiDivision === "junior"
+        ? "Junior School"
+        : getDivision(cls?.grade);
+
+  const isPrimary = apiDivision === "primary";
 
   const generatedOn = new Date().toLocaleDateString(undefined, {
     year: "numeric",
@@ -86,52 +146,100 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
     day: "numeric",
   });
 
-  // All unique subject names — driven by subjectSummaries (already sorted by average DESC)
-  const allSubjects = subjectSummaries?.map((s) => s.subject_name) ?? [];
-  const colW = getColWidths(allSubjects.length);
-  const division = getDivision(cls.grade);
+  const academicYear =
+    data.academic_year ||
+    data.academicYear ||
+    meta.academic_year ||
+    "—";
 
-  const tableWidth =
-    colW.pos +
-    colW.name +
-    colW.adm +
-    allSubjects.length * colW.subj +
-    colW.total +
-    colW.grade;
+  const termNumber =
+    data.term_number ||
+    data.termNumber ||
+    meta.term_number ||
+    "—";
+
+  const classAverage =
+    meta.class_avg_percentage ??
+    meta.class_average ??
+    null;
+
+  const topStudent = meta.top_student;
+
+  /*
+   * The API result model is exam-level.
+   *
+   * Therefore the table intentionally does NOT create subject columns.
+   * A learner's percentage represents:
+   *
+   *     total questions correct / total questions across included exams
+   *
+   * or the API's calculated avg_percentage.
+   */
+
+  const columns = isPrimary
+    ? [
+        { key: "position", label: "Position", width: 70 },
+        { key: "student", label: "Learner", width: 230 },
+        { key: "admission", label: "Adm. No.", width: 105 },
+        { key: "percentage", label: "Average %", width: 105 },
+        { key: "correct", label: "Correct", width: 90 },
+        { key: "exams", label: "Exams", width: 75 },
+        { key: "grade", label: "Grade", width: 85 },
+      ]
+    : [
+        { key: "position", label: "Position", width: 70 },
+        { key: "student", label: "Learner", width: 220 },
+        { key: "admission", label: "Adm. No.", width: 100 },
+        { key: "percentage", label: "Average %", width: 100 },
+        { key: "correct", label: "Correct", width: 85 },
+        { key: "exams", label: "Exams", width: 70 },
+        { key: "points", label: "Points", width: 80 },
+        { key: "grade", label: "Mean Grade", width: 90 },
+      ];
+
+  const tableWidth = columns.reduce(
+    (total, column) => total + column.width,
+    0,
+  );
+
   const rootWidth = Math.max(tableWidth + 72, 900);
-
-  const baseFontSize = allSubjects.length <= 8 ? "12px" : "11px";
-  const cellPadding = allSubjects.length <= 8 ? "8px 10px" : "6px 8px";
-  const headerPad = allSubjects.length <= 8 ? "9px 10px" : "7px 7px";
 
   return (
     <div
       ref={ref}
       style={{
         width: `${rootWidth}px`,
-        backgroundColor: "#fff",
+        backgroundColor: "#ffffff",
+        color: "#1e293b",
         fontFamily: "'Segoe UI', Arial, sans-serif",
-        fontSize: baseFontSize,
-        color: "#1f2937",
+        fontSize: "12px",
       }}
     >
-      {/* ── Header ────────────────────────────────────────────────── */}
+      {/* =========================================================
+          HEADER
+      ========================================================= */}
       <div
         style={{
-          background: "#1a2744",
-          padding: "20px 36px 16px",
+          background: "#172554",
+          padding: "24px 36px 20px",
           display: "flex",
-          justifyContent: "space-between",
           alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "14px",
+          }}
+        >
           <div
             style={{
-              width: "48px",
-              height: "48px",
+              width: "52px",
+              height: "52px",
               borderRadius: "50%",
-              background: "#c9a84c",
+              background: "#facc15",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -139,104 +247,239 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
             }}
           >
             <span
-              style={{ color: "#1a2744", fontWeight: "800", fontSize: "18px" }}
+              style={{
+                color: "#172554",
+                fontSize: "20px",
+                fontWeight: "800",
+              }}
             >
               {schoolName.charAt(0)}
             </span>
           </div>
+
           <div>
-            <div style={{ color: "#fff", fontSize: "20px", fontWeight: "700" }}>
-              {schoolName}
-            </div>
             <div
               style={{
-                color: "#c9a84c",
+                color: "#ffffff",
+                fontSize: "21px",
+                fontWeight: "700",
+                letterSpacing: "0.2px",
+              }}
+            >
+              {schoolName}
+            </div>
+
+            <div
+              style={{
+                color: "#facc15",
                 fontSize: "9px",
-                letterSpacing: "1.5px",
+                fontWeight: "600",
+                letterSpacing: "1.8px",
                 textTransform: "uppercase",
-                marginTop: "2px",
+                marginTop: "3px",
               }}
             >
               {schoolMotto}
             </div>
+
             {schoolAddress && (
               <div
-                style={{ color: "#64748b", fontSize: "9px", marginTop: "2px" }}
+                style={{
+                  color: "#cbd5e1",
+                  fontSize: "9px",
+                  marginTop: "4px",
+                }}
               >
                 {schoolAddress}
               </div>
             )}
           </div>
         </div>
+
         <div style={{ textAlign: "right" }}>
           <div
             style={{
-              background: "#c9a84c",
-              color: "#1a2744",
-              padding: "4px 12px",
-              borderRadius: "20px",
-              fontSize: "9px",
+              color: "#ffffff",
+              fontSize: "16px",
+              fontWeight: "700",
+            }}
+          >
+            CLASS PERFORMANCE
+          </div>
+
+          <div
+            style={{
+              color: "#facc15",
+              fontSize: "10px",
               fontWeight: "700",
               letterSpacing: "1px",
               textTransform: "uppercase",
+              marginTop: "4px",
             }}
           >
-            {examType} Performance Report
+            {examType || "Exam"} Report
           </div>
-          <div style={{ color: "#64748b", fontSize: "9px", marginTop: "5px" }}>
-            {generatedOn}
+
+          <div
+            style={{
+              color: "#cbd5e1",
+              fontSize: "9px",
+              marginTop: "6px",
+            }}
+          >
+            Generated {generatedOn}
           </div>
         </div>
       </div>
 
-      {/* ── Gold rule ─────────────────────────────────────────────── */}
       <div
         style={{
-          height: "3px",
-          background: "linear-gradient(90deg,#c9a84c,#e8cc85,#c9a84c)",
+          height: "4px",
+          background:
+            "linear-gradient(90deg, #eab308, #fde68a, #eab308)",
         }}
       />
 
-      {/* ── Class info strip ──────────────────────────────────────── */}
+      {/* =========================================================
+          ACADEMIC INFORMATION
+      ========================================================= */}
       <div
         style={{
           background: "#f8fafc",
           borderBottom: "1px solid #e2e8f0",
-          padding: "12px 36px",
+          padding: "13px 36px",
           display: "flex",
-          flexWrap: "wrap",
-          gap: "24px",
           alignItems: "center",
+          justifyContent: "space-between",
+          gap: "24px",
+        }}
+      >
+        <div style={{ display: "flex", gap: "30px" }}>
+          {[
+            {
+              label: "Class",
+              value: cls?.name || "—",
+            },
+            {
+              label: "Grade",
+              value: cls?.grade ? `Grade ${cls.grade}` : "—",
+            },
+            {
+              label: "Division",
+              value: division,
+            },
+            {
+              label: "Academic Year",
+              value: academicYear,
+            },
+            {
+              label: "Term",
+              value: termNumber !== "—" ? `Term ${termNumber}` : "—",
+            },
+          ].map((item) => (
+            <div key={item.label}>
+              <div
+                style={{
+                  color: "#94a3b8",
+                  fontSize: "8px",
+                  fontWeight: "600",
+                  letterSpacing: "0.8px",
+                  textTransform: "uppercase",
+                }}
+              >
+                {item.label}
+              </div>
+
+              <div
+                style={{
+                  color: "#172554",
+                  fontSize: "11px",
+                  fontWeight: "700",
+                  marginTop: "3px",
+                }}
+              >
+                {item.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div
+          style={{
+            background: "#172554",
+            color: "#ffffff",
+            borderRadius: "20px",
+            padding: "6px 14px",
+            fontSize: "9px",
+            fontWeight: "700",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {students.length} Learner
+          {students.length === 1 ? "" : "s"}
+        </div>
+      </div>
+
+      {/* =========================================================
+          SUMMARY CARDS
+      ========================================================= */}
+      <div
+        style={{
+          padding: "18px 36px 6px",
+          display: "flex",
+          gap: "10px",
         }}
       >
         {[
-          { label: "Class", value: cls.name },
-          { label: "Grade", value: `Grade ${cls.grade}` },
-          { label: "Division", value: division },
-          { label: "Exam type", value: examType },
-          { label: "Students", value: students.length },
           {
-            label: "Class teacher",
-            value: cls.class_teacher_name || "—",
+            label: "Learners assessed",
+            value: meta.total_students ?? students.length,
           },
-        ].map((item, i) => (
-          <div key={i}>
+          {
+            label: "Class average",
+            value: formatPercentage(classAverage),
+          },
+          {
+            label: "Top learner",
+            value: topStudent ? getStudentName(topStudent) : "—",
+          },
+          {
+            label: "Boys / Girls",
+            value: `${meta.boys ?? 0} / ${meta.girls ?? 0}`,
+          },
+        ].map((item) => (
+          <div
+            key={item.label}
+            style={{
+              flex: 1,
+              background: "#f8fafc",
+              border: "1px solid #e2e8f0",
+              borderRadius: "7px",
+              padding: "10px 12px",
+              minWidth: 0,
+            }}
+          >
             <div
               style={{
-                fontSize: "8px",
                 color: "#94a3b8",
+                fontSize: "7px",
+                fontWeight: "700",
+                letterSpacing: "0.8px",
                 textTransform: "uppercase",
-                letterSpacing: "0.7px",
               }}
             >
               {item.label}
             </div>
+
             <div
               style={{
-                fontSize: "12px",
-                fontWeight: "600",
-                color: "#1a2744",
-                marginTop: "2px",
+                color: "#172554",
+                fontSize: "13px",
+                fontWeight: "700",
+                marginTop: "4px",
+                overflow: "hidden",
+                whiteSpace: "nowrap",
+                textOverflow: "ellipsis",
               }}
             >
               {item.value}
@@ -245,19 +488,48 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
         ))}
       </div>
 
-      {/* ── Rankings table ────────────────────────────────────────── */}
-      <div style={{ padding: "20px 36px" }}>
+      {/* =========================================================
+          PERFORMANCE TABLE
+      ========================================================= */}
+      <div style={{ padding: "18px 36px 24px" }}>
         <div
           style={{
-            fontSize: "8px",
-            fontWeight: "700",
-            color: "#94a3b8",
-            letterSpacing: "1.2px",
-            textTransform: "uppercase",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
             marginBottom: "8px",
           }}
         >
-          Student rankings — sorted by average percentage
+          <div>
+            <div
+              style={{
+                color: "#172554",
+                fontSize: "13px",
+                fontWeight: "700",
+              }}
+            >
+              Learner Performance
+            </div>
+
+            <div
+              style={{
+                color: "#94a3b8",
+                fontSize: "8px",
+                marginTop: "3px",
+              }}
+            >
+              Ranked by average percentage performance
+            </div>
+          </div>
+
+          <div
+            style={{
+              color: "#64748b",
+              fontSize: "8px",
+            }}
+          >
+            {examType || "Selected exam"}
+          </div>
         </div>
 
         <table
@@ -268,337 +540,261 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
           }}
         >
           <colgroup>
-            <col style={{ width: `${colW.pos}px` }} />
-            <col style={{ width: `${colW.name}px` }} />
-            <col style={{ width: `${colW.adm}px` }} />
-            {allSubjects.map((_, i) => (
-              <col key={i} style={{ width: `${colW.subj}px` }} />
+            {columns.map((column) => (
+              <col
+                key={column.key}
+                style={{ width: `${column.width}px` }}
+              />
             ))}
-            {/* Avg % column + Grade column */}
-            <col style={{ width: `${colW.total}px` }} />
-            <col style={{ width: `${colW.grade}px` }} />
           </colgroup>
 
           <thead>
-            <tr style={{ background: "#1a2744" }}>
-              {[
-                { label: "Pos", align: "left" },
-                { label: "Name", align: "left" },
-                { label: "Adm No.", align: "left" },
-              ].map(({ label, align }) => (
+            <tr style={{ background: "#172554" }}>
+              {columns.map((column) => (
                 <th
-                  key={label}
+                  key={column.key}
                   style={{
-                    padding: headerPad,
-                    fontSize: "9px",
-                    fontWeight: "600",
-                    color: "#c9a84c",
+                    padding: "9px 8px",
+                    color: "#facc15",
+                    fontSize: "8px",
+                    fontWeight: "700",
                     letterSpacing: "0.4px",
                     textTransform: "uppercase",
-                    borderBottom: "2px solid #c9a84c",
-                    textAlign: align,
+                    textAlign:
+                      column.key === "student" ||
+                      column.key === "admission"
+                        ? "left"
+                        : "center",
+                    borderBottom: "2px solid #eab308",
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {label}
-                </th>
-              ))}
-
-              {/* One column per subject — use subject_code from summaries */}
-              {subjectSummaries.map((sub, i) => (
-                <th
-                  key={i}
-                  style={{
-                    padding: headerPad,
-                    fontSize: "9px",
-                    fontWeight: "600",
-                    color: "#c9a84c",
-                    letterSpacing: "0.3px",
-                    textTransform: "uppercase",
-                    borderBottom: "2px solid #c9a84c",
-                    textAlign: "center",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {sub.subject_code ||
-                    sub.subject_name
-                      .split(" ")
-                      .map((w) => w[0])
-                      .join("")}
-                </th>
-              ))}
-
-              {/* Avg % + Grade */}
-              {[
-                { label: "Avg %", align: "center" },
-                { label: "Grade", align: "center" },
-              ].map(({ label, align }) => (
-                <th
-                  key={label}
-                  style={{
-                    padding: headerPad,
-                    fontSize: "9px",
-                    fontWeight: "600",
-                    color: "#c9a84c",
-                    letterSpacing: "0.4px",
-                    textTransform: "uppercase",
-                    borderBottom: "2px solid #c9a84c",
-                    textAlign: align,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {label}
+                  {column.label}
                 </th>
               ))}
             </tr>
           </thead>
 
           <tbody>
-            {students.map((s, i) => (
-              <tr
-                key={s.student_id}
-                style={{
-                  background: i % 2 === 0 ? "#fff" : "#f8fafc",
-                  borderBottom: "1px solid #e8edf2",
-                }}
-              >
-                {/* Position */}
-                <td
+            {students.map((student, index) => {
+              const position = Number(student.position);
+              const grade = student.mean_grade;
+
+              return (
+                <tr
+                  key={student.student_id}
                   style={{
-                    padding: cellPadding,
-                    ...positionStyle(s.position),
-                    fontSize: "10px",
+                    background:
+                      index % 2 === 0 ? "#ffffff" : "#f8fafc",
+                    borderBottom: "1px solid #e5e7eb",
                   }}
                 >
-                  {positionSuffix(s.position)}
-                </td>
-
-                {/* Name */}
-                <td
-                  style={{
-                    padding: cellPadding,
-                    fontWeight: "500",
-                    color: "#0f172a",
-                    fontSize: "11px",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    maxWidth: `${colW.name}px`,
-                  }}
-                >
-                  {s.first_name} {s.last_name}
-                </td>
-
-                {/* Adm No */}
-                <td
-                  style={{
-                    padding: cellPadding,
-                    color: "#64748b",
-                    fontSize: "10px",
-                  }}
-                >
-                  {s.student_number}
-                </td>
-
-                {/* Per-subject percentage cells */}
-                {allSubjects.map((subjectName) => {
-                  const pct = getSubjectPercentage(s.exam_results, subjectName);
-                  const grade = getSubjectGrade(s.exam_results, subjectName);
-                  const color = grade
-                    ? GRADE_COLORS[grade] || "#374151"
-                    : "#d1d5db";
-
-                  return (
-                    <td
-                      key={subjectName}
-                      style={{
-                        padding: cellPadding,
-                        textAlign: "center",
-                        color,
-                        fontWeight: pct !== null ? "600" : "400",
-                        fontSize: "11px",
-                      }}
-                    >
-                      {pct !== null ? `${pct}%` : "—"}
-                    </td>
-                  );
-                })}
-
-                {/* Average percentage across all exams */}
-                <td
-                  style={{
-                    padding: cellPadding,
-                    textAlign: "center",
-                    fontWeight: "700",
-                    color: "#1a2744",
-                    fontSize: "12px",
-                  }}
-                >
-                  {s.avg_percentage != null
-                    ? `${parseFloat(s.avg_percentage).toFixed(1)}%`
-                    : "—"}
-                </td>
-
-                {/* Mean grade circle */}
-                <td style={{ padding: cellPadding, textAlign: "center" }}>
-                  <span
+                  {/* Position */}
+                  <td
                     style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: "22px",
-                      height: "22px",
-                      borderRadius: "50%",
-                      background: GRADE_COLORS[s.mean_grade] || "#94a3b8",
-                      color: "#fff",
-                      fontSize: "10px",
-                      fontWeight: "700",
+                      padding: "8px",
+                      textAlign: "center",
                     }}
                   >
-                    {s.mean_grade || "—"}
-                  </span>
-                </td>
-              </tr>
-            ))}
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        minWidth: "38px",
+                        padding: "4px 7px",
+                        borderRadius: "12px",
+                        fontSize: "8px",
+                        fontWeight: "700",
+                        ...positionStyle(position),
+                      }}
+                    >
+                      {positionSuffix(position)}
+                    </span>
+                  </td>
+
+                  {/* Learner */}
+                  <td
+                    style={{
+                      padding: "8px",
+                      color: "#0f172a",
+                      fontSize: "10px",
+                      fontWeight: "600",
+                      overflow: "hidden",
+                      whiteSpace: "nowrap",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {getStudentName(student)}
+                  </td>
+
+                  {/* Admission number */}
+                  <td
+                    style={{
+                      padding: "8px",
+                      color: "#64748b",
+                      fontSize: "9px",
+                    }}
+                  >
+                    {student.student_number || "—"}
+                  </td>
+
+                  {/* Average */}
+                  <td
+                    style={{
+                      padding: "8px",
+                      textAlign: "center",
+                      color: "#172554",
+                      fontSize: "11px",
+                      fontWeight: "800",
+                    }}
+                  >
+                    {formatPercentage(student.avg_percentage)}
+                  </td>
+
+                  {/* Correct */}
+                  <td
+                    style={{
+                      padding: "8px",
+                      textAlign: "center",
+                      color: "#475569",
+                      fontSize: "10px",
+                      fontWeight: "600",
+                    }}
+                  >
+                    {formatNumber(student.total_correct)}
+                  </td>
+
+                  {/* Exams */}
+                  <td
+                    style={{
+                      padding: "8px",
+                      textAlign: "center",
+                      color: "#475569",
+                      fontSize: "10px",
+                    }}
+                  >
+                    {formatNumber(student.exams_count)}
+                  </td>
+
+                  {/* Points - junior only */}
+                  {!isPrimary && (
+                    <td
+                      style={{
+                        padding: "8px",
+                        textAlign: "center",
+                        color: "#475569",
+                        fontSize: "10px",
+                        fontWeight: "600",
+                      }}
+                    >
+                      {formatNumber(student.total_points)}
+                    </td>
+                  )}
+
+                  {/* Mean grade */}
+                  <td
+                    style={{
+                      padding: "8px",
+                      textAlign: "center",
+                    }}
+                  >
+                    {grade ? (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          minWidth: "32px",
+                          height: "23px",
+                          padding: "0 6px",
+                          borderRadius: "12px",
+                          background: getGradeBackground(grade),
+                          color: getGradeColor(grade),
+                          fontSize: "9px",
+                          fontWeight: "800",
+                        }}
+                      >
+                        {grade}
+                      </span>
+                    ) : (
+                      <span
+                        style={{
+                          color: "#cbd5e1",
+                          fontSize: "10px",
+                        }}
+                      >
+                        —
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-      {/* ── Subject summary footer ────────────────────────────────── */}
-      {subjectSummaries && subjectSummaries.length > 0 && (
-        <div style={{ padding: "0 36px 20px", marginTop: "12px" }}>
-          <div
-            style={{
-              fontSize: "8px",
-              fontWeight: "700",
-              color: "#94a3b8",
-              letterSpacing: "1.2px",
-              textTransform: "uppercase",
-              marginBottom: "8px",
-            }}
-          >
-            Subject performance summary — ranked by average percentage
-          </div>
-
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "#f1f5f9" }}>
-                {[
-                  "Rank",
-                  "Subject",
-                  "Highest %",
-                  "Lowest %",
-                  "Average %",
-                  "Students sat",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    style={{
-                      padding: "6px 10px",
-                      fontSize: "8px",
-                      fontWeight: "600",
-                      color: "#64748b",
-                      letterSpacing: "0.5px",
-                      textTransform: "uppercase",
-                      textAlign: "left",
-                      borderBottom: "1px solid #e2e8f0",
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {/* Already sorted DESC by average from the backend query */}
-              {subjectSummaries.map((sub, i) => (
-                <tr
-                  key={sub.subject_name}
-                  style={{ borderBottom: "1px solid #f1f5f9" }}
-                >
-                  <td
-                    style={{
-                      padding: "6px 10px",
-                      fontWeight: "600",
-                      color: "#1a2744",
-                      fontSize: "11px",
-                    }}
-                  >
-                    {i + 1}
-                  </td>
-                  <td
-                    style={{
-                      padding: "6px 10px",
-                      fontWeight: "500",
-                      fontSize: "11px",
-                    }}
-                  >
-                    {sub.subject_name}
-                  </td>
-                  {/* highest / lowest / average are now percentage floats from the backend */}
-                  <td
-                    style={{
-                      padding: "6px 10px",
-                      color: "#15803d",
-                      fontWeight: "600",
-                      fontSize: "11px",
-                    }}
-                  >
-                    {sub.highest != null ? `${sub.highest}%` : "—"}
-                  </td>
-                  <td
-                    style={{
-                      padding: "6px 10px",
-                      color: "#dc2626",
-                      fontWeight: "600",
-                      fontSize: "11px",
-                    }}
-                  >
-                    {sub.lowest != null ? `${sub.lowest}%` : "—"}
-                  </td>
-                  <td
-                    style={{
-                      padding: "6px 10px",
-                      fontWeight: "700",
-                      color: "#1a2744",
-                      fontSize: "11px",
-                    }}
-                  >
-                    {sub.average != null ? `${sub.average}%` : "—"}
-                  </td>
-                  <td
-                    style={{
-                      padding: "6px 10px",
-                      color: "#64748b",
-                      fontSize: "11px",
-                    }}
-                  >
-                    {sub.students_sat}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ── Footer ───────────────────────────────────────────────── */}
+      {/* =========================================================
+          PERFORMANCE NOTES
+      ========================================================= */}
       <div
         style={{
-          background: "#1a2744",
-          padding: "8px 36px",
+          margin: "0 36px 20px",
+          padding: "11px 14px",
+          background: "#f8fafc",
+          border: "1px solid #e2e8f0",
+          borderLeft: "3px solid #eab308",
+          borderRadius: "4px",
+        }}
+      >
+        <div
+          style={{
+            color: "#475569",
+            fontSize: "8px",
+            lineHeight: "1.6",
+          }}
+        >
+          <strong style={{ color: "#172554" }}>
+            Performance note:
+          </strong>{" "}
+          Average percentage represents performance across the recorded
+          exam results for the selected examination period. Correct answers
+          are based on the questions recorded for each exam.
+          {!isPrimary &&
+            " Mean grades and points are applicable to the Junior School grading structure."}
+        </div>
+      </div>
+
+      {/* =========================================================
+          FOOTER
+      ========================================================= */}
+      <div
+        style={{
+          background: "#172554",
+          padding: "9px 36px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
         }}
       >
-        <span style={{ color: "#64748b", fontSize: "9px" }}>
+        <span
+          style={{
+            color: "#cbd5e1",
+            fontSize: "8px",
+          }}
+        >
           {schoolName} · Class Performance Report
         </span>
-        <span style={{ color: "#c9a84c", fontSize: "9px", fontWeight: "600" }}>
-          Generated {generatedOn} · Exam Management System
+
+        <span
+          style={{
+            color: "#facc15",
+            fontSize: "8px",
+            fontWeight: "600",
+          }}
+        >
+          {academicYear} · Term {termNumber} · Exam Management System
         </span>
       </div>
     </div>
