@@ -11,6 +11,18 @@ const GRADE_COLORS = {
   BE2: "#dc2626",
 };
 
+// Points per CBC grade — used for junior school points column
+const GRADE_POINTS = {
+  EE1: 8,
+  EE2: 7,
+  ME1: 6,
+  ME2: 5,
+  AE1: 4,
+  AE2: 3,
+  BE1: 2,
+  BE2: 1,
+};
+
 const COLORS = {
   navy: "#17233c",
   navyLight: "#243452",
@@ -26,113 +38,40 @@ const COLORS = {
 };
 
 /* ================================================================
-   HELPERS
+   HELPERS  (unchanged unless noted)
 ================================================================ */
 
 const getDivision = (grade) => {
   const g = Number(grade);
-
   if (g >= 4 && g <= 6) return "Primary";
   if (g >= 7 && g <= 8) return "Junior School";
-
   return "Other";
 };
 
-/**
- * Get the percentage for a subject from a learner's exam results.
- *
- * If a subject appears in more than one exam, the percentages are
- * averaged for that subject.
- */
-const getSubjectPercentage = (examResults = [], subjectName) => {
-  const matching = examResults.filter((exam) =>
-    (exam.subjects || []).some(
-      (subject) => subject.subject_name === subjectName,
-    ),
-  );
+// ── FIX 2 + 5: columns are now EXAMS, not subjects ──────────────────────────
+// Get the percentage for a specific exam by exam_id
+const getExamPercentage = (examResults = [], examId) => {
+  const match = examResults.find((e) => e.exam_id === examId);
+  if (!match) return null;
+  const pct = Number(match.percentage);
+  return Number.isFinite(pct) ? pct : null;
+};
 
-  if (!matching.length) return null;
+const getExamGrade = (examResults = [], examId) => {
+  const match = examResults.find((e) => e.exam_id === examId);
+  return match?.grade ?? null;
+};
 
-  const percentages = matching
-    .map((exam) => Number(exam.percentage))
-    .filter(Number.isFinite);
-
+const getLearnerTotal = (student, exams) => {
+  const percentages = exams
+    .map((exam) => getExamPercentage(student.exam_results, exam.exam_id))
+    .filter((p) => p !== null);
   if (!percentages.length) return null;
-
-  const average =
-    percentages.reduce((sum, value) => sum + value, 0) / percentages.length;
-
-  return Number(average.toFixed(1));
+  // FIX 1: round to nearest integer (no decimals)
+  return Math.round(percentages.reduce((s, p) => s + p, 0));
 };
 
-/**
- * Safely get a learner's subject grade.
- *
- * The current results structure is exam-level, so the grade comes
- * from the matching exam where available.
- */
-const getSubjectGrade = (examResults = [], subjectName) => {
-  const matching = examResults.filter((exam) =>
-    (exam.subjects || []).some(
-      (subject) => subject.subject_name === subjectName,
-    ),
-  );
-
-  if (!matching.length) return null;
-
-  const grades = matching
-    .map((exam) => exam.grade)
-    .filter(Boolean);
-
-  return grades.length ? grades[0] : null;
-};
-
-/**
- * TOTAL = SUM OF SUBJECT PERCENTAGES.
- *
- * Example:
- *
- * Mathematics       80
- * Kiswahili         90
- * English           80
- * Integrated Sci.   50
- *
- * TOTAL = 300
- *
- * Maximum for 4 subjects = 400.
- *
- * IMPORTANT:
- * This is NOT an average and should NOT be displayed with a "%" sign.
- */
-const getLearnerTotal = (student, subjects) => {
-  const percentages = subjects
-    .map((subject) =>
-      getSubjectPercentage(
-        student.exam_results,
-        subject.subject_name,
-      ),
-    )
-    .filter((percentage) => percentage !== null);
-
-  if (!percentages.length) return null;
-
-  return Number(
-    percentages
-      .reduce((sum, percentage) => sum + percentage, 0)
-      .toFixed(1),
-  );
-};
-
-/**
- * Competition ranking.
- *
- * Example:
- *
- * 400 → 1
- * 350 → 2
- * 350 → 2
- * 300 → 4
- */
+// Competition ranking (unchanged)
 const calculateCompetitionRanking = (
   items,
   scoreKey,
@@ -140,153 +79,89 @@ const calculateCompetitionRanking = (
   fallbackSort = "",
 ) => {
   const sorted = [...items].sort((a, b) => {
-    const scoreA = Number(a[scoreKey]);
-    const scoreB = Number(b[scoreKey]);
-
-    const safeA = Number.isFinite(scoreA) ? scoreA : -1;
-    const safeB = Number.isFinite(scoreB) ? scoreB : -1;
-
-    if (safeB !== safeA) {
-      return safeB - safeA;
-    }
-
+    const sa = Number.isFinite(Number(a[scoreKey])) ? Number(a[scoreKey]) : -1;
+    const sb = Number.isFinite(Number(b[scoreKey])) ? Number(b[scoreKey]) : -1;
+    if (sb !== sa) return sb - sa;
     return fallbackSort
       ? String(a[fallbackSort] || "").localeCompare(
           String(b[fallbackSort] || ""),
         )
       : 0;
   });
-
-  let previousScore = null;
-  let position = 0;
-
-  return sorted.map((item, index) => {
+  let prev = null,
+    pos = 0;
+  return sorted.map((item, i) => {
     const score = item[scoreKey];
-
-    if (score !== previousScore) {
-      position = index + 1;
-      previousScore = score;
+    if (score !== prev) {
+      pos = i + 1;
+      prev = score;
     }
-
-    return {
-      ...item,
-      [positionKey]: position,
-    };
+    return { ...item, [positionKey]: pos };
   });
 };
 
 const positionStyle = (position) => {
-  if (position === 1) {
-    return {
-      color: "#b45309",
-      fontWeight: "800",
-    };
-  }
-
-  if (position === 2) {
-    return {
-      color: "#64748b",
-      fontWeight: "700",
-    };
-  }
-
-  if (position === 3) {
-    return {
-      color: "#c2410c",
-      fontWeight: "700",
-    };
-  }
-
-  return {
-    color: "#374151",
-    fontWeight: "600",
-  };
+  if (position === 1) return { color: "#b45309", fontWeight: "800" };
+  if (position === 2) return { color: "#64748b", fontWeight: "700" };
+  if (position === 3) return { color: "#c2410c", fontWeight: "700" };
+  return { color: "#374151", fontWeight: "600" };
 };
 
-/**
- * Resolve teacher name from the different teacher fields that
- * may be returned by the backend.
- */
-const getTeacherName = (subject) => {
-  if (subject.teacher_name) {
-    return subject.teacher_name;
-  }
+// ── FIX 5: build exam analysis (replaces buildSubjectAnalysis) ───────────────
+// Derives per-exam stats from the students' exam_results arrays
+const buildExamAnalysis = (students = [], allExams = []) => {
+  const analysis = allExams.map((exam) => {
+    const percentages = students
+      .map((s) => getExamPercentage(s.exam_results, exam.exam_id))
+      .filter((p) => p !== null);
 
-  if (subject.teacher_first_name || subject.teacher_last_name) {
-    return [
-      subject.teacher_first_name,
-      subject.teacher_last_name,
-    ]
-      .filter(Boolean)
-      .join(" ");
-  }
+    if (!percentages.length) {
+      return {
+        ...exam,
+        _average: 0,
+        _highest: 0,
+        _lowest: 0,
+        _studentsSat: 0,
+      };
+    }
 
-  if (subject.teacher) {
-    return subject.teacher;
-  }
-
-  return "—";
-};
-
-/**
- * Build subject analysis from backend subject summaries.
- *
- * Ranking is based on subject mean/average.
- */
-const buildSubjectAnalysis = (subjectSummaries = []) => {
-  const subjects = subjectSummaries.map((subject) => ({
-    ...subject,
-    _average: Number(
-      subject.average ??
-        subject.mean ??
-        subject.mean_score ??
-        subject.avg_percentage ??
-        0,
-    ),
-    _highest: Number(
-      subject.highest ??
-        subject.highest_percentage ??
-        0,
-    ),
-    _lowest: Number(
-      subject.lowest ??
-        subject.lowest_percentage ??
-        0,
-    ),
-    _studentsSat: Number(
-      subject.students_sat ??
-        subject.student_count ??
-        subject.students_count ??
-        0,
-    ),
-  }));
+    const sum = percentages.reduce((s, p) => s + p, 0);
+    return {
+      ...exam,
+      // FIX 1: two decimal places for exam analysis (requirement 5 says "nearest two decimal places")
+      _average: parseFloat((sum / percentages.length).toFixed(2)),
+      _highest: parseFloat(Math.max(...percentages).toFixed(2)),
+      _lowest: parseFloat(Math.min(...percentages).toFixed(2)),
+      _studentsSat: percentages.length,
+    };
+  });
 
   return calculateCompetitionRanking(
-    subjects,
+    analysis,
     "_average",
     "_rank",
-    "subject_name",
+    "exam_title",
   );
 };
 
-const getSubjectColumnWidth = (subjectCount) => {
-  if (subjectCount <= 6) return 70;
-  if (subjectCount <= 8) return 64;
-  if (subjectCount <= 10) return 58;
+const getSubjectColumnWidth = (count) => {
+  if (count <= 6) return 70;
+  if (count <= 8) return 64;
+  if (count <= 10) return 58;
   return 52;
 };
 
-const getNameColumnWidth = (subjectCount) => {
-  if (subjectCount <= 6) return 190;
-  if (subjectCount <= 8) return 175;
-  if (subjectCount <= 10) return 160;
+const getNameColumnWidth = (count) => {
+  if (count <= 6) return 190;
+  if (count <= 8) return 175;
+  if (count <= 10) return 160;
   return 145;
 };
 
-const getFontScale = (subjectCount) => {
-  if (subjectCount <= 6) return 1;
-  if (subjectCount <= 8) return 0.96;
-  if (subjectCount <= 10) return 0.92;
+const getFontScale = (count) => {
+  if (count <= 6) return 1;
+  if (count <= 8) return 0.96;
+  if (count <= 10) return 0.92;
   return 0.88;
 };
 
@@ -309,7 +184,6 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
   const {
     class: cls = {},
     students: rawStudents = [],
-    subjectSummaries: rawSubjectSummaries = [],
   } = data;
 
   const generatedOn = new Date().toLocaleDateString(undefined, {
@@ -319,55 +193,39 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
   });
 
   const division = getDivision(cls.grade);
+  const isPrimary = division === "Primary";
 
-  /* ================================================================
-     SUBJECT LIST
-  ================================================================= */
-
-  const subjects = rawSubjectSummaries.map((subject) => ({
-    ...subject,
-    subject_name: subject.subject_name,
-    subject_code: subject.subject_code,
-  }));
-
-  /*
-   * Fallback:
-   * If subjectSummaries is missing, derive subjects from learner
-   * exam results.
-   */
-  if (!subjects.length) {
-    const subjectMap = new Map();
-
-    rawStudents.forEach((student) => {
-      (student.exam_results || []).forEach((exam) => {
-        (exam.subjects || []).forEach((subject) => {
-          if (!subjectMap.has(subject.subject_name)) {
-            subjectMap.set(subject.subject_name, {
-              subject_name: subject.subject_name,
-              subject_code: subject.subject_code,
-            });
-          }
+  // ── FIX 2: columns are EXAMS, built from students' exam_results ─────────────
+  // Collect all unique exams that appear across all students
+  const examMap = new Map();
+  rawStudents.forEach((student) => {
+    (student.exam_results || []).forEach((er) => {
+      if (!examMap.has(er.exam_id)) {
+        examMap.set(er.exam_id, {
+          exam_id: er.exam_id,
+          exam_title: er.exam_title,
+          exam_type: er.exam_type,
         });
-      });
+      }
     });
+  });
+  // Sort by exam_id so order is consistent
+  const allExams = [...examMap.values()].sort((a, b) => a.exam_id - b.exam_id);
 
-    subjects.push(...subjectMap.values());
-  }
+  // ── FIX 4: points column only for junior — determine upfront ────────────────
+  const showPoints = !isPrimary;
 
-  /* ================================================================
-     LEARNER TOTALS + RANKING
-  ================================================================= */
-
+  // ── Learner totals + ranking ────────────────────────────────────────────────
   const studentsWithScores = rawStudents.map((student) => ({
     ...student,
-
-    /*
-     * This is the actual total shown in the PDF.
-     *
-     * Example:
-     * 80 + 90 + 80 + 50 = 300
-     */
-    _pdfTotal: getLearnerTotal(student, subjects),
+    _pdfTotal: getLearnerTotal(student, allExams),
+    // FIX 4: compute total points for junior school
+    _totalPoints: showPoints
+      ? (student.exam_results || []).reduce(
+          (sum, er) => sum + (GRADE_POINTS[er.grade] ?? 0),
+          0,
+        )
+      : null,
   }));
 
   const students = calculateCompetitionRanking(
@@ -377,34 +235,27 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
     "first_name",
   );
 
-  /* ================================================================
-     SUBJECT ANALYSIS
-  ================================================================= */
+  // ── FIX 5: exam analysis replaces subject analysis ──────────────────────────
+  const examAnalysis = buildExamAnalysis(rawStudents, allExams);
 
-  const subjectAnalysis = buildSubjectAnalysis(
-    rawSubjectSummaries,
-  );
+  // Class total mean score = sum of each exam's mean score
+  const classTotalMean = examAnalysis.length
+    ? parseFloat(
+        examAnalysis.reduce((sum, e) => sum + e._average, 0).toFixed(2),
+      )
+    : null;
 
-  const bestSubject =
-    subjectAnalysis.length > 0 ? subjectAnalysis[0] : null;
+  const bestExam = examAnalysis.length ? examAnalysis[0] : null;
 
-  const subjectCount = subjects.length;
+  const examCount = allExams.length;
+  const scale = getFontScale(examCount);
+  const subjectWidth = getSubjectColumnWidth(examCount);
+  const nameWidth = getNameColumnWidth(examCount);
 
-  /*
-   * Example:
-   * 4 subjects × 100 = 400 maximum total.
-   */
-  const totalPossible = subjectCount * 100;
+  // Total possible = number of exams × 100 (each exam is out of 100%)
+  const totalPossible = examCount * 100;
 
-  const subjectWidth = getSubjectColumnWidth(subjectCount);
-  const nameWidth = getNameColumnWidth(subjectCount);
-  const scale = getFontScale(subjectCount);
-
-  /*
-   * A4 landscape approximately at 96 DPI.
-   */
   const PAGE_WIDTH = 1120;
-
   const headerFontSize = `${Math.round(18 * scale)}px`;
   const bodyFontSize = `${Math.round(10.5 * scale)}px`;
 
@@ -423,10 +274,7 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
         overflow: "hidden",
       }}
     >
-      {/* ============================================================
-          HEADER
-      ============================================================ */}
-
+      {/* ── Header (unchanged) ─────────────────────────────────────── */}
       <div
         style={{
           background: COLORS.navy,
@@ -467,7 +315,6 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
               {schoolName.charAt(0)}
             </span>
           </div>
-
           <div style={{ minWidth: 0 }}>
             <div
               style={{
@@ -479,7 +326,6 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
             >
               {schoolName}
             </div>
-
             <div
               style={{
                 color: COLORS.goldLight,
@@ -491,28 +337,16 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
             >
               {schoolMotto}
             </div>
-
             {schoolAddress && (
               <div
-                style={{
-                  color: "#cbd5e1",
-                  fontSize: "8px",
-                  marginTop: "2px",
-                }}
+                style={{ color: "#cbd5e1", fontSize: "8px", marginTop: "2px" }}
               >
                 {schoolAddress}
               </div>
             )}
           </div>
         </div>
-
-        <div
-          style={{
-            textAlign: "right",
-            flexShrink: 0,
-            marginLeft: "20px",
-          }}
-        >
+        <div style={{ textAlign: "right", flexShrink: 0, marginLeft: "20px" }}>
           <div
             style={{
               color: COLORS.goldLight,
@@ -524,7 +358,6 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
           >
             Class Performance Report
           </div>
-
           <div
             style={{
               color: COLORS.white,
@@ -535,30 +368,15 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
           >
             {examType}
           </div>
-
-          <div
-            style={{
-              color: "#cbd5e1",
-              fontSize: "8px",
-              marginTop: "2px",
-            }}
-          >
+          <div style={{ color: "#cbd5e1", fontSize: "8px", marginTop: "2px" }}>
             {generatedOn}
           </div>
         </div>
       </div>
 
-      <div
-        style={{
-          height: "3px",
-          background: COLORS.gold,
-        }}
-      />
+      <div style={{ height: "3px", background: COLORS.gold }} />
 
-      {/* ============================================================
-          CLASS INFORMATION
-      ============================================================ */}
-
+      {/* ── Class info — FIX 6: use cls.class_teacher_name (now returned by backend) */}
       <div
         style={{
           background: "#f8fafc",
@@ -571,22 +389,10 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
         }}
       >
         {[
-          {
-            label: "Class",
-            value: cls.name || `Grade ${cls.grade}`,
-          },
-          {
-            label: "Division",
-            value: division,
-          },
-          {
-            label: "Students",
-            value: students.length,
-          },
-          {
-            label: "Class Teacher",
-            value: cls.class_teacher_name || "—",
-          },
+          { label: "Class", value: cls.name || `Grade ${cls.grade}` },
+          { label: "Division", value: division },
+          { label: "Students", value: students.length },
+          { label: "Class Teacher", value: cls.class_teacher_name || "—" },
         ].map((item) => (
           <div key={item.label}>
             <div
@@ -599,7 +405,6 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
             >
               {item.label}
             </div>
-
             <div
               style={{
                 fontSize: "10px",
@@ -614,16 +419,8 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
         ))}
       </div>
 
-      {/* ============================================================
-          MAIN PERFORMANCE TABLE
-      ============================================================ */}
-
-      <div
-        style={{
-          padding: "14px 32px 8px",
-          boxSizing: "border-box",
-        }}
-      >
+      {/* ── Main performance table ─────────────────────────────────── */}
+      <div style={{ padding: "14px 32px 8px", boxSizing: "border-box" }}>
         <div
           style={{
             display: "flex",
@@ -643,14 +440,8 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
           >
             Learner Performance
           </div>
-
-          <div
-            style={{
-              fontSize: "7.5px",
-              color: COLORS.lightMuted,
-            }}
-          >
-            Total = sum of subject percentages · Maximum {totalPossible}
+          <div style={{ fontSize: "7.5px", color: COLORS.lightMuted }}>
+            Total = sum of exam percentages · Maximum {totalPossible}
           </div>
         </div>
 
@@ -666,56 +457,28 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
             <col style={{ width: "55px" }} />
             <col style={{ width: `${nameWidth}px` }} />
             <col style={{ width: "75px" }} />
-
-            {subjects.map((subject) => (
-              <col
-                key={subject.subject_name}
-                style={{
-                  width: `${subjectWidth}px`,
-                }}
-              />
+            {allExams.map((exam) => (
+              <col key={exam.exam_id} style={{ width: `${subjectWidth}px` }} />
             ))}
-
+            {/* FIX 4: extra col for Points if junior school */}
+            {showPoints && <col style={{ width: "55px" }} />}
             <col style={{ width: "78px" }} />
+            {/* FIX 4: Grade col */}
             <col style={{ width: "62px" }} />
           </colgroup>
 
           <thead>
-            <tr
-              style={{
-                background: COLORS.navy,
-              }}
-            >
-              <th
-                style={{
-                  ...headerCellStyle,
-                  textAlign: "center",
-                }}
-              >
-                Pos.
-              </th>
-
-              <th
-                style={{
-                  ...headerCellStyle,
-                  textAlign: "left",
-                }}
-              >
-                Learner
-              </th>
-
-              <th
-                style={{
-                  ...headerCellStyle,
-                  textAlign: "left",
-                }}
-              >
+            <tr style={{ background: COLORS.navy }}>
+              <th style={{ ...headerCellStyle, textAlign: "center" }}>Pos.</th>
+              <th style={{ ...headerCellStyle, textAlign: "left" }}>Learner</th>
+              <th style={{ ...headerCellStyle, textAlign: "left" }}>
                 Adm. No.
               </th>
 
-              {subjects.map((subject) => (
+              {/* FIX 2: column header = full exam title */}
+              {allExams.map((exam) => (
                 <th
-                  key={subject.subject_name}
+                  key={exam.exam_id}
                   style={{
                     ...headerCellStyle,
                     textAlign: "center",
@@ -723,25 +486,19 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
                   }}
-                  title={subject.subject_name}
+                  title={exam.exam_title}
                 >
-                  {subject.subject_code ||
-                    subject.subject_name
-                      .split(/\s+/)
-                      .map((word) => word[0])
-                      .join("")
-                      .slice(0, 6)}
+                  {exam.exam_title}
                 </th>
               ))}
 
-              <th
-                style={{
-                  ...headerCellStyle,
-                  textAlign: "center",
-                }}
-              >
-                <div>Total</div>
+              {/* FIX 4: Points column for junior only */}
+              {showPoints && (
+                <th style={{ ...headerCellStyle, textAlign: "center" }}>Pts</th>
+              )}
 
+              <th style={{ ...headerCellStyle, textAlign: "center" }}>
+                <div>Total</div>
                 <div
                   style={{
                     fontSize: "6.5px",
@@ -755,54 +512,35 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
                 </div>
               </th>
 
-              <th
-                style={{
-                  ...headerCellStyle,
-                  textAlign: "center",
-                }}
-              >
-                Grade
-              </th>
+              {/* FIX 4: Grade column */}
+              <th style={{ ...headerCellStyle, textAlign: "center" }}>Grade</th>
             </tr>
           </thead>
 
           <tbody>
             {students.map((student, index) => {
               const total = student._pdfTotal;
-
-              const learnerGrade =
-                student.mean_grade ||
-                student.grade ||
-                null;
+              // FIX 4: mean_grade comes from the API
+              const learnerGrade = student.mean_grade || null;
 
               return (
                 <tr
                   key={student.student_id}
                   style={{
-                    background:
-                      index % 2 === 0
-                        ? COLORS.white
-                        : COLORS.rowAlt,
+                    background: index % 2 === 0 ? COLORS.white : COLORS.rowAlt,
                     borderBottom: `1px solid ${COLORS.border}`,
                   }}
                 >
-                  {/* Position */}
-
                   <td
                     style={{
                       ...bodyCellStyle,
-                      ...positionStyle(
-                        student._pdfPosition,
-                      ),
+                      ...positionStyle(student._pdfPosition),
                       textAlign: "center",
                       fontSize: "11px",
                     }}
                   >
                     {student._pdfPosition}
                   </td>
-
-                  {/* Learner */}
-
                   <td
                     style={{
                       ...bodyCellStyle,
@@ -814,12 +552,8 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
                       textOverflow: "ellipsis",
                     }}
                   >
-                    {student.first_name}{" "}
-                    {student.last_name}
+                    {student.first_name} {student.last_name}
                   </td>
-
-                  {/* Admission number */}
-
                   <td
                     style={{
                       ...bodyCellStyle,
@@ -831,51 +565,55 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
                     {student.student_number || "—"}
                   </td>
 
-                  {/* Subject percentages */}
-
-                  {subjects.map((subject) => {
-                    const percentage =
-                      getSubjectPercentage(
-                        student.exam_results,
-                        subject.subject_name,
-                      );
-
-                    const subjectGrade =
-                      getSubjectGrade(
-                        student.exam_results,
-                        subject.subject_name,
-                      );
-
-                    const gradeColor =
-                      GRADE_COLORS[subjectGrade] ||
-                      COLORS.navy;
+                  {/* FIX 2 + 3: per-exam percentage, no % symbol, FIX 1: rounded */}
+                  {allExams.map((exam) => {
+                    const pct = getExamPercentage(
+                      student.exam_results,
+                      exam.exam_id,
+                    );
+                    const grade = getExamGrade(
+                      student.exam_results,
+                      exam.exam_id,
+                    );
+                    const color = grade
+                      ? GRADE_COLORS[grade] || COLORS.navy
+                      : "#cbd5e1";
 
                     return (
                       <td
-                        key={subject.subject_name}
+                        key={exam.exam_id}
                         style={{
                           ...bodyCellStyle,
                           textAlign: "center",
-                          color:
-                            percentage !== null
-                              ? gradeColor
-                              : "#cbd5e1",
-                          fontWeight:
-                            percentage !== null
-                              ? "700"
-                              : "400",
+                          color,
+                          fontWeight: pct !== null ? "700" : "400",
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {percentage !== null
-                          ? `${percentage.toFixed(1)}%`
-                          : "—"}
+                        {/* FIX 1: no decimals; FIX 3: no % symbol */}
+                        {pct !== null ? Math.round(pct) : "—"}
                       </td>
                     );
                   })}
 
-                  {/* TOTAL */}
+                  {/* FIX 4: Points for junior school */}
+                  {showPoints && (
+                    <td
+                      style={{
+                        ...bodyCellStyle,
+                        textAlign: "center",
+                        fontWeight: "700",
+                        color: COLORS.navy,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {student._totalPoints != null
+                        ? student._totalPoints
+                        : "—"}
+                    </td>
+                  )}
 
+                  {/* FIX 1: Total — no decimals */}
                   <td
                     style={{
                       ...bodyCellStyle,
@@ -886,20 +624,11 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {total !== null &&
-                    total !== undefined
-                      ? Number(total).toFixed(1)
-                      : "—"}
+                    {total != null ? Math.round(total) : "—"}
                   </td>
 
-                  {/* Grade */}
-
-                  <td
-                    style={{
-                      ...bodyCellStyle,
-                      textAlign: "center",
-                    }}
-                  >
+                  {/* FIX 4: Grade circle */}
+                  <td style={{ ...bodyCellStyle, textAlign: "center" }}>
                     {learnerGrade ? (
                       <span
                         style={{
@@ -911,9 +640,7 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
                           padding: "0 5px",
                           borderRadius: "4px",
                           background:
-                            GRADE_COLORS[
-                              learnerGrade
-                            ] || COLORS.muted,
+                            GRADE_COLORS[learnerGrade] || COLORS.muted,
                           color: COLORS.white,
                           fontSize: "9px",
                           fontWeight: "700",
@@ -922,12 +649,7 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
                         {learnerGrade}
                       </span>
                     ) : (
-                      <span
-                        style={{
-                          color: "#cbd5e1",
-                          fontSize: "10px",
-                        }}
-                      >
+                      <span style={{ color: "#cbd5e1", fontSize: "10px" }}>
                         —
                       </span>
                     )}
@@ -939,10 +661,7 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
         </table>
       </div>
 
-      {/* ============================================================
-          CLASS SUMMARY
-      ============================================================ */}
-
+      {/* ── Class summary (unchanged structure, FIX 1: no decimals) ── */}
       <div
         style={{
           margin: "2px 32px 12px",
@@ -955,29 +674,11 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
           boxSizing: "border-box",
         }}
       >
-        <div
-          style={{
-            fontSize: "8px",
-            color: COLORS.muted,
-          }}
-        >
-          <strong
-            style={{
-              color: COLORS.navy,
-            }}
-          >
-            {students.length}
-          </strong>{" "}
+        <div style={{ fontSize: "8px", color: COLORS.muted }}>
+          <strong style={{ color: COLORS.navy }}>{students.length}</strong>{" "}
           learners assessed
         </div>
-
-        <div
-          style={{
-            display: "flex",
-            gap: "24px",
-            alignItems: "center",
-          }}
-        >
+        <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
           <div>
             <span
               style={{
@@ -987,19 +688,12 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
                 marginRight: "5px",
               }}
             >
-              Subjects
+              Exams
             </span>
-
-            <strong
-              style={{
-                fontSize: "9px",
-                color: COLORS.navy,
-              }}
-            >
-              {subjects.length}
+            <strong style={{ fontSize: "9px", color: COLORS.navy }}>
+              {allExams.length}
             </strong>
           </div>
-
           <div>
             <span
               style={{
@@ -1011,22 +705,28 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
             >
               Top Total
             </span>
-
-            <strong
-              style={{
-                fontSize: "9px",
-                color: COLORS.navy,
-              }}
-            >
-              {students.length &&
-              students[0]._pdfTotal != null
-                ? `${Number(
-                    students[0]._pdfTotal,
-                  ).toFixed(1)} / ${totalPossible}`
+            <strong style={{ fontSize: "9px", color: COLORS.navy }}>
+              {students.length && students[0]._pdfTotal != null
+                ? `${Math.round(students[0]._pdfTotal)} / ${totalPossible}`
                 : "—"}
             </strong>
           </div>
-
+          {/* FIX 5: class total mean score */}
+          <div>
+            <span
+              style={{
+                fontSize: "7px",
+                color: COLORS.lightMuted,
+                textTransform: "uppercase",
+                marginRight: "5px",
+              }}
+            >
+              Class Mean
+            </span>
+            <strong style={{ fontSize: "9px", color: COLORS.navy }}>
+              {classTotalMean != null ? classTotalMean : "—"}
+            </strong>
+          </div>
           <div>
             <span
               style={{
@@ -1038,32 +738,16 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
             >
               Top Position
             </span>
-
-            <strong
-              style={{
-                fontSize: "9px",
-                color: COLORS.navy,
-              }}
-            >
-              {students.length
-                ? students[0]._pdfPosition
-                : "—"}
+            <strong style={{ fontSize: "9px", color: COLORS.navy }}>
+              {students.length ? students[0]._pdfPosition : "—"}
             </strong>
           </div>
         </div>
       </div>
 
-      {/* ============================================================
-          SUBJECT ANALYSIS
-      ============================================================ */}
-
-      {subjectAnalysis.length > 0 && (
-        <div
-          style={{
-            padding: "0 32px 12px",
-            boxSizing: "border-box",
-          }}
-        >
+      {/* ── FIX 5: Exam analysis (replaces subject analysis) ──────── */}
+      {examAnalysis.length > 0 && (
+        <div style={{ padding: "0 32px 12px", boxSizing: "border-box" }}>
           <div
             style={{
               display: "flex",
@@ -1081,23 +765,13 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
                 textTransform: "uppercase",
               }}
             >
-              Subject Performance Analysis
+              Exam Performance Analysis
             </div>
-
-            {bestSubject && (
-              <div
-                style={{
-                  fontSize: "7.5px",
-                  color: COLORS.muted,
-                }}
-              >
-                Best performing subject:{" "}
-                <strong
-                  style={{
-                    color: COLORS.navy,
-                  }}
-                >
-                  {bestSubject.subject_name}
+            {bestExam && (
+              <div style={{ fontSize: "7.5px", color: COLORS.muted }}>
+                Best performing exam:{" "}
+                <strong style={{ color: COLORS.navy }}>
+                  {bestExam.exam_title}
                 </strong>
               </div>
             )}
@@ -1113,8 +787,8 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
           >
             <colgroup>
               <col style={{ width: "55px" }} />
-              <col style={{ width: "240px" }} />
-              <col style={{ width: "210px" }} />
+              <col style={{ width: "320px" }} /> {/* wider for exam title */}
+              <col style={{ width: "100px" }} />
               <col style={{ width: "90px" }} />
               <col style={{ width: "90px" }} />
               <col style={{ width: "90px" }} />
@@ -1122,235 +796,160 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
             </colgroup>
 
             <thead>
-              <tr
-                style={{
-                  background: COLORS.navyLight,
-                }}
-              >
-                <th
-                  style={{
-                    ...analysisHeaderCellStyle,
-                    textAlign: "center",
-                  }}
-                >
+              <tr style={{ background: COLORS.navyLight }}>
+                <th style={{ ...analysisHeaderCellStyle, textAlign: "center" }}>
                   Rank
                 </th>
-
-                <th
-                  style={{
-                    ...analysisHeaderCellStyle,
-                    textAlign: "left",
-                  }}
-                >
-                  Subject
+                <th style={{ ...analysisHeaderCellStyle, textAlign: "left" }}>
+                  Exam
                 </th>
-
-                <th
-                  style={{
-                    ...analysisHeaderCellStyle,
-                    textAlign: "left",
-                  }}
-                >
-                  Teacher
+                <th style={{ ...analysisHeaderCellStyle, textAlign: "left" }}>
+                  Type
                 </th>
-
-                <th
-                  style={{
-                    ...analysisHeaderCellStyle,
-                    textAlign: "center",
-                  }}
-                >
+                <th style={{ ...analysisHeaderCellStyle, textAlign: "center" }}>
                   Mean %
                 </th>
-
-                <th
-                  style={{
-                    ...analysisHeaderCellStyle,
-                    textAlign: "center",
-                  }}
-                >
+                <th style={{ ...analysisHeaderCellStyle, textAlign: "center" }}>
                   Highest
                 </th>
-
-                <th
-                  style={{
-                    ...analysisHeaderCellStyle,
-                    textAlign: "center",
-                  }}
-                >
+                <th style={{ ...analysisHeaderCellStyle, textAlign: "center" }}>
                   Lowest
                 </th>
-
-                <th
-                  style={{
-                    ...analysisHeaderCellStyle,
-                    textAlign: "center",
-                  }}
-                >
+                <th style={{ ...analysisHeaderCellStyle, textAlign: "center" }}>
                   Learners
                 </th>
               </tr>
             </thead>
 
             <tbody>
-              {subjectAnalysis.map(
-                (subject, index) => {
-                  const rank = subject._rank;
+              {examAnalysis.map((exam, index) => (
+                <tr
+                  key={exam.exam_id}
+                  style={{
+                    background: index % 2 === 0 ? COLORS.white : COLORS.rowAlt,
+                    borderBottom: `1px solid ${COLORS.border}`,
+                  }}
+                >
+                  <td
+                    style={{
+                      ...analysisBodyCellStyle,
+                      ...positionStyle(exam._rank),
+                      textAlign: "center",
+                      fontSize: "10px",
+                    }}
+                  >
+                    {exam._rank}
+                  </td>
+                  <td
+                    style={{
+                      ...analysisBodyCellStyle,
+                      textAlign: "left",
+                      fontWeight: "700",
+                      color: COLORS.navy,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {exam.exam_title}
+                  </td>
+                  <td
+                    style={{
+                      ...analysisBodyCellStyle,
+                      textAlign: "left",
+                      color: COLORS.muted,
+                    }}
+                  >
+                    {exam.exam_type || "—"}
+                  </td>
+                  {/* FIX 5: two decimal places on exam analysis */}
+                  <td
+                    style={{
+                      ...analysisBodyCellStyle,
+                      textAlign: "center",
+                      fontWeight: "800",
+                      color: COLORS.navy,
+                    }}
+                  >
+                    {Number.isFinite(exam._average)
+                      ? exam._average.toFixed(2)
+                      : "—"}
+                  </td>
+                  <td
+                    style={{
+                      ...analysisBodyCellStyle,
+                      textAlign: "center",
+                      color: COLORS.success,
+                      fontWeight: "700",
+                    }}
+                  >
+                    {Number.isFinite(exam._highest)
+                      ? exam._highest.toFixed(2)
+                      : "—"}
+                  </td>
+                  <td
+                    style={{
+                      ...analysisBodyCellStyle,
+                      textAlign: "center",
+                      color: COLORS.muted,
+                      fontWeight: "600",
+                    }}
+                  >
+                    {Number.isFinite(exam._lowest)
+                      ? exam._lowest.toFixed(2)
+                      : "—"}
+                  </td>
+                  <td
+                    style={{
+                      ...analysisBodyCellStyle,
+                      textAlign: "center",
+                      color: COLORS.muted,
+                      fontWeight: "600",
+                    }}
+                  >
+                    {exam._studentsSat || "—"}
+                  </td>
+                </tr>
+              ))}
 
-                  return (
-                    <tr
-                      key={
-                        subject.subject_id ||
-                        subject.subject_code ||
-                        subject.subject_name
-                      }
-                      style={{
-                        background:
-                          index % 2 === 0
-                            ? COLORS.white
-                            : COLORS.rowAlt,
-                        borderBottom: `1px solid ${COLORS.border}`,
-                      }}
-                    >
-                      {/* Subject rank */}
-
-                      <td
-                        style={{
-                          ...analysisBodyCellStyle,
-                          ...positionStyle(rank),
-                          textAlign: "center",
-                          fontSize: "10px",
-                        }}
-                      >
-                        {rank}
-                      </td>
-
-                      {/* Subject */}
-
-                      <td
-                        style={{
-                          ...analysisBodyCellStyle,
-                          textAlign: "left",
-                          fontWeight: "700",
-                          color: COLORS.navy,
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {subject.subject_name}
-
-                        {subject.subject_code && (
-                          <span
-                            style={{
-                              marginLeft: "7px",
-                              color: COLORS.lightMuted,
-                              fontSize: "7px",
-                              fontWeight: "500",
-                            }}
-                          >
-                            {subject.subject_code}
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Teacher */}
-
-                      <td
-                        style={{
-                          ...analysisBodyCellStyle,
-                          textAlign: "left",
-                          color: COLORS.muted,
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {getTeacherName(subject)}
-                      </td>
-
-                      {/* Mean */}
-
-                      <td
-                        style={{
-                          ...analysisBodyCellStyle,
-                          textAlign: "center",
-                          fontWeight: "800",
-                          color: COLORS.navy,
-                        }}
-                      >
-                        {Number.isFinite(
-                          subject._average,
-                        )
-                          ? `${subject._average.toFixed(
-                              1,
-                            )}%`
-                          : "—"}
-                      </td>
-
-                      {/* Highest */}
-
-                      <td
-                        style={{
-                          ...analysisBodyCellStyle,
-                          textAlign: "center",
-                          color: COLORS.success,
-                          fontWeight: "700",
-                        }}
-                      >
-                        {Number.isFinite(
-                          subject._highest,
-                        )
-                          ? `${subject._highest.toFixed(
-                              1,
-                            )}%`
-                          : "—"}
-                      </td>
-
-                      {/* Lowest */}
-
-                      <td
-                        style={{
-                          ...analysisBodyCellStyle,
-                          textAlign: "center",
-                          color: COLORS.muted,
-                          fontWeight: "600",
-                        }}
-                      >
-                        {Number.isFinite(
-                          subject._lowest,
-                        )
-                          ? `${subject._lowest.toFixed(
-                              1,
-                            )}%`
-                          : "—"}
-                      </td>
-
-                      {/* Learners */}
-
-                      <td
-                        style={{
-                          ...analysisBodyCellStyle,
-                          textAlign: "center",
-                          color: COLORS.muted,
-                          fontWeight: "600",
-                        }}
-                      >
-                        {subject._studentsSat || "—"}
-                      </td>
-                    </tr>
-                  );
-                },
-              )}
+              {/* FIX 5: class total mean score row at the bottom */}
+              <tr
+                style={{
+                  background: "#f0f4f8",
+                  borderTop: `2px solid ${COLORS.gold}`,
+                }}
+              >
+                <td style={{ ...analysisBodyCellStyle, textAlign: "center" }} />
+                <td
+                  style={{
+                    ...analysisBodyCellStyle,
+                    textAlign: "left",
+                    fontWeight: "800",
+                    color: COLORS.navy,
+                  }}
+                  colSpan={2}
+                >
+                  Class Total Mean Score
+                </td>
+                <td
+                  style={{
+                    ...analysisBodyCellStyle,
+                    textAlign: "center",
+                    fontWeight: "800",
+                    color: COLORS.gold,
+                    fontSize: "11px",
+                  }}
+                >
+                  {classTotalMean != null ? classTotalMean : "—"}
+                </td>
+                <td colSpan={3} />
+              </tr>
             </tbody>
           </table>
         </div>
       )}
 
-      {/* ============================================================
-          FOOTER
-      ============================================================ */}
-
+      {/* ── Footer (unchanged) ────────────────────────────────────── */}
       <div
         style={{
           background: COLORS.navy,
@@ -1361,15 +960,9 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
           boxSizing: "border-box",
         }}
       >
-        <span
-          style={{
-            color: "#cbd5e1",
-            fontSize: "7px",
-          }}
-        >
+        <span style={{ color: "#cbd5e1", fontSize: "7px" }}>
           {schoolName} · Class Performance Report
         </span>
-
         <span
           style={{
             color: COLORS.goldLight,
@@ -1385,7 +978,7 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
 });
 
 /* ================================================================
-   TABLE STYLES
+   TABLE STYLES  (unchanged)
 ================================================================ */
 
 const headerCellStyle = {
