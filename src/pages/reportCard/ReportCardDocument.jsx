@@ -1,1237 +1,486 @@
 import { forwardRef } from "react";
 
-// CBC grade colours — used for Junior School grades.
 const GRADE_COLORS = {
-  EE1: "#15803d",
-  EE2: "#16a34a",
-  ME1: "#0369a1",
-  ME2: "#0284c7",
-  AE1: "#b45309",
-  AE2: "#d97706",
-  BE1: "#dc2626",
-  BE2: "#991b1b",
+  EE1: "#16a34a", EE2: "#22c55e",
+  ME1: "#059669", ME2: "#10b981",
+  AE1: "#d97706", AE2: "#f59e0b",
+  BE1: "#ea580c", BE2: "#dc2626",
 };
 
 const GRADE_BG = {
-  EE1: "#dcfce7",
-  EE2: "#dcfce7",
-  ME1: "#dbeafe",
-  ME2: "#e0f2fe",
-  AE1: "#fef3c7",
-  AE2: "#fef3c7",
-  BE1: "#fee2e2",
-  BE2: "#fce7f3",
+  EE1: "#dcfce7", EE2: "#f0fdf4",
+  ME1: "#d1fae5", ME2: "#ecfdf5",
+  AE1: "#fef3c7", AE2: "#fefce8",
+  BE1: "#ffedd5", BE2: "#fee2e2",
+};
+
+// Full label for each CBC grade code
+const GRADE_LABELS = {
+  EE1: "Exceeds Expectation",
+  EE2: "Exceeds Expectation",
+  ME1: "Meets Expectation",
+  ME2: "Meets Expectation",
+  AE1: "Approaches Expectation",
+  AE2: "Approaches Expectation",
+  BE1: "Below Expectation",
+  BE2: "Below Expectation",
+};
+
+// Short remark for use inside the table cell
+const GRADE_SHORT_REMARKS = {
+  EE1: "Exceeds — Outstanding",
+  EE2: "Exceeds — Very Good",
+  ME1: "Meets — Good",
+  ME2: "Meets — Satisfactory",
+  AE1: "Approaches — Fair",
+  AE2: "Approaches — Needs work",
+  BE1: "Below — Improvement needed",
+  BE2: "Below — Urgent support",
+};
+
+const GRADE_POINTS = {
+  EE1: 8, EE2: 7, ME1: 6, ME2: 5,
+  AE1: 4, AE2: 3, BE1: 2, BE2: 1,
+};
+
+// Teacher comments keyed by mean grade — used at the bottom of the card
+const TEACHER_COMMENTS = {
+  EE1: "An exceptional learner who consistently demonstrates mastery. Keep up the outstanding work.",
+  EE2: "A highly capable learner who exceeds expectations. Encourage continued excellence.",
+  ME1: "A dedicated learner who meets all expectations. With continued effort, greater heights await.",
+  ME2: "A hardworking learner who meets most expectations. Focus on identified gaps to improve further.",
+  AE1: "A learner who is approaching the expected level. More practice and support is encouraged.",
+  AE2: "Progress is noted but more effort is required. Please seek additional support where needed.",
+  BE1: "Performance is below expectation. Intervention and extra support are strongly recommended.",
+  BE2: "Urgent support is needed. Please consult with the class teacher for a learning support plan.",
 };
 
 const positionSuffix = (n) => {
-  if (!n || Number(n) < 1) return "—";
-
-  const value = Number(n);
-  const j = value % 10;
-  const k = value % 100;
-
-  if (j === 1 && k !== 11) return `${value}st`;
-  if (j === 2 && k !== 12) return `${value}nd`;
-  if (j === 3 && k !== 13) return `${value}rd`;
-
-  return `${value}th`;
+  if (!n) return "—";
+  const j = n % 10, k = n % 100;
+  if (j === 1 && k !== 11) return `${n}st`;
+  if (j === 2 && k !== 12) return `${n}nd`;
+  if (j === 3 && k !== 13) return `${n}rd`;
+  return `${n}th`;
 };
 
-const displayValue = (value, fallback = "—") =>
-  value === null || value === undefined || value === ""
-    ? fallback
-    : value;
-
-const formatDate = (date) => {
-  if (!date) return "—";
-
-  const parsedDate = new Date(date);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return "—";
-  }
-
-  return parsedDate.toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-};
-
-const formatSubjects = (subjects = []) => {
-  if (!Array.isArray(subjects) || subjects.length === 0) {
-    return "—";
-  }
-
-  const names = subjects
-    .map((subject) => subject?.subject_name)
-    .filter(Boolean);
-
-  return names.length > 0 ? names.join(" · ") : "—";
-};
-
-const formatSubjectCodes = (subjects = []) => {
-  if (!Array.isArray(subjects) || subjects.length === 0) {
-    return "—";
-  }
-
-  const codes = subjects
-    .map((subject) => subject?.subject_code)
-    .filter(Boolean);
-
-  return codes.length > 0 ? codes.join(" / ") : "—";
-};
-
-const tableCell = (extra = {}) => ({
-  padding: "8px 9px",
-  fontSize: "10.5px",
-  color: "#334155",
-  borderBottom: "1px solid #e2e8f0",
+const cell = (extra = {}) => ({
+  padding: "8px 10px",
+  fontSize: "11.5px",
+  color: "#1f2937",
+  borderBottom: "1px solid #e8edf4",
   verticalAlign: "middle",
   ...extra,
 });
 
-const labelStyle = {
-  fontSize: "8px",
-  fontWeight: "700",
-  color: "#64748b",
-  textTransform: "uppercase",
-  letterSpacing: "0.9px",
-};
+// Format exam subjects for display
+const formatSubjects = (subjects = []) =>
+  subjects?.length ? subjects.map(s => s.subject_name).join(" & ") : "—";
+
+const formatSubjectCodes = (subjects = []) =>
+  subjects?.length ? subjects.map(s => s.subject_code).join("/") : "—";
 
 const ReportCardDocument = forwardRef(function ReportCardDocument(
   {
     report,
-    schoolName = "MUKURU OUTREACH ACADEMY",
-    schoolMotto = "Learning and achieving together",
-    classTeacherName = null,
-    closingDate = null,
-    openingDate = null,
+    examType,
+    schoolName   = "MUKURU OUTREACH ACADEMY",
+    schoolMotto  = "Learning and achieving together",
+    closingDate  = null,
+    openingDate  = null,
   },
   ref,
 ) {
   if (!report) return null;
 
-  const {
-    student = {},
-    class: cls = {},
-    term = {},
-    division,
-    exams = [],
-    summary = {},
-  } = report;
+  const { student, class: cls, term, division, exams, summary } = report;
+  const isPrimary  = division === "primary";
+  const meanGrade  = summary?.mean_grade;
+  const gradeColor = GRADE_COLORS[meanGrade] || "#64748b";
 
-  const safeExams = Array.isArray(exams) ? exams : [];
-  const isPrimary = division === "primary";
-  const isJunior = !isPrimary;
+  const generatedOn = new Date().toLocaleDateString(undefined, {
+    year: "numeric", month: "long", day: "numeric",
+  });
 
-  const meanGrade = summary.mean_grade ?? null;
+  // ── Fix 1 + 2: per-exam analytics ──────────────────────────────────
+  const examRows = exams || [];
 
-  const meanGradeColor =
-    GRADE_COLORS[meanGrade] || "#475569";
-
-  const meanGradeBackground =
-    GRADE_BG[meanGrade] || "#f1f5f9";
-
-  const averagePercentage =
-    summary.average_percentage !== null &&
-    summary.average_percentage !== undefined
-      ? Number(summary.average_percentage)
-      : null;
-
-  const hasPosition =
-    summary.position !== null &&
-    summary.position !== undefined &&
-    Number(summary.position) > 0;
-
-  const generatedOn = new Date().toLocaleDateString(
-    undefined,
-    {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    },
+  // Total percentage = sum of all exam percentages
+  const totalPercentage = examRows.reduce(
+    (sum, r) => sum + (parseFloat(r.percentage) || 0), 0
   );
+  const maxPercentage = examRows.length * 100;
 
-  const teacherName =
-    classTeacherName ||
-    cls.teacher_name ||
-    "—";
+  // Strongest and weakest exams by percentage
+  const sortedByPct = [...examRows].sort(
+    (a, b) => (parseFloat(b.percentage) || 0) - (parseFloat(a.percentage) || 0)
+  );
+  const strongestExam = sortedByPct[0] ?? null;
+  const weakestExam   = sortedByPct[sortedByPct.length - 1] ?? null;
 
-  const reportTitle =
-    term.exam_type && term.exam_type !== "All"
-      ? `${term.exam_type} Examination Report`
-      : "Academic Report Card";
+  // Junior: total points
+  const totalPoints = isPrimary
+    ? null
+    : examRows.reduce((sum, r) => sum + (GRADE_POINTS[r.grade] ?? 0), 0);
+  const maxPoints = isPrimary ? null : examRows.length * 8;
 
-  const summaryItems = [
-    {
-      label: "Examinations",
-      value: summary.total_exams ?? safeExams.length,
-    },
-    {
-      label: "Average",
-      value:
-        averagePercentage !== null
-          ? `${averagePercentage}%`
-          : "—",
-    },
-    ...(isJunior
-      ? [
-          {
-            label: "Total Points",
-            value:
-              summary.total_points != null &&
-              summary.max_points != null
-                ? `${summary.total_points} / ${summary.max_points}`
-                : "—",
-          },
-        ]
-      : []),
-    {
-      label: "School Division",
-      value: isPrimary ? "Primary" : "Junior",
-    },
-  ];
+  // Table headers vary by division
+  const headers = isPrimary
+    ? ["Exam / Subject", "Code", "Correct", "Out of", "%", "Remark", "Performance", "Grade"]
+    : ["Exam / Subject", "Code", "Correct", "Out of", "%", "Points", "Performance", "Grade"];
 
   return (
     <div
       ref={ref}
       style={{
-        width: "794px",
-        minHeight: "1123px",
-        boxSizing: "border-box",
-        background: "#ffffff",
-        color: "#1e293b",
+        width: "794px", minHeight: "1123px",
+        backgroundColor: "#ffffff",
         fontFamily: "'Segoe UI', Arial, sans-serif",
-        fontSize: "12px",
-        lineHeight: 1.4,
+        fontSize: "12px", color: "#1f2937",
         position: "relative",
-        paddingBottom: "48px",
-        overflow: "hidden",
       }}
     >
-      {/* =========================================================
-          SCHOOL HEADER
-      ========================================================= */}
-      <div
-        style={{
-          padding: "25px 38px 20px",
-          background:
-            "linear-gradient(135deg, #10213f 0%, #172f55 100%)",
-          color: "#ffffff",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "20px",
-          }}
-        >
-          {/* School identity */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "13px",
-              minWidth: 0,
-            }}
-          >
-            <div
-              style={{
-                width: "58px",
-                height: "58px",
-                borderRadius: "50%",
-                border: "2px solid #d7b75d",
-                background: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-                boxSizing: "border-box",
-              }}
-            >
-              <span
-                style={{
-                  color: "#10213f",
-                  fontSize: "21px",
-                  fontWeight: "900",
-                }}
-              >
-                {schoolName.charAt(0)}
-              </span>
+      {/* ── Header ──────────────────────────────────────────────────── */}
+      <div style={{ background: "linear-gradient(135deg,#1a2744 0%,#0f1a30 100%)", padding: "26px 36px 20px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "linear-gradient(135deg,#c9a84c,#e8cc85)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 12px rgba(201,168,76,0.4)" }}>
+              <span style={{ color: "#1a2744", fontWeight: "900", fontSize: "20px" }}>{schoolName.charAt(0)}</span>
             </div>
-
-            <div style={{ minWidth: 0 }}>
-              <div
-                style={{
-                  fontSize: "20px",
-                  lineHeight: 1.15,
-                  fontWeight: "800",
-                  letterSpacing: "0.2px",
-                }}
-              >
-                {schoolName}
-              </div>
-
-              <div
-                style={{
-                  marginTop: "5px",
-                  color: "#d7b75d",
-                  fontSize: "9px",
-                  fontWeight: "600",
-                  letterSpacing: "1.6px",
-                  textTransform: "uppercase",
-                }}
-              >
-                {schoolMotto}
-              </div>
+            <div>
+              <div style={{ color: "#fff", fontSize: "20px", fontWeight: "800", letterSpacing: "0.3px" }}>{schoolName}</div>
+              <div style={{ color: "#c9a84c", fontSize: "10px", letterSpacing: "2px", textTransform: "uppercase", marginTop: "3px" }}>{schoolMotto}</div>
             </div>
           </div>
-
-          {/* Report metadata */}
-          <div
-            style={{
-              textAlign: "right",
-              flexShrink: 0,
-            }}
-          >
-            <div
-              style={{
-                display: "inline-block",
-                padding: "5px 12px",
-                borderRadius: "4px",
-                background: "#d7b75d",
-                color: "#10213f",
-                fontSize: "9px",
-                fontWeight: "800",
-                textTransform: "uppercase",
-                letterSpacing: "0.5px",
-              }}
-            >
-              {reportTitle}
+          <div style={{ textAlign: "right" }}>
+            <div style={{ background: "linear-gradient(135deg,#c9a84c,#e8cc85)", color: "#1a2744", padding: "5px 16px", borderRadius: "20px", fontSize: "10px", fontWeight: "800", letterSpacing: "1px", textTransform: "uppercase", display: "inline-block" }}>
+              Term {term?.term_number} · {examType !== "All" ? examType : "Report Card"}
             </div>
-
-            <div
-              style={{
-                marginTop: "7px",
-                color: "#cbd5e1",
-                fontSize: "9px",
-              }}
-            >
-              Term {displayValue(term.term_number)}
-              {"  "}·{"  "}
-              {displayValue(term.academic_year)}
-            </div>
-          </div>
-        </div>
-
-        {/* Document title */}
-        <div
-          style={{
-            marginTop: "20px",
-            paddingTop: "13px",
-            borderTop: "1px solid rgba(255,255,255,0.16)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "10px",
-              fontWeight: "700",
-              letterSpacing: "1.8px",
-              textTransform: "uppercase",
-              color: "#e2e8f0",
-            }}
-          >
-            Learner Academic Performance
-          </div>
-
-          <div
-            style={{
-              fontSize: "8.5px",
-              color: "#94a3b8",
-            }}
-          >
-            Generated {generatedOn}
+            <div style={{ color: "#94a3b8", fontSize: "9.5px", marginTop: "5px" }}>{term?.academic_year} · {generatedOn}</div>
           </div>
         </div>
       </div>
 
-      {/* Gold accent */}
-      <div
-        style={{
-          height: "4px",
-          background:
-            "linear-gradient(90deg, #b8943f 0%, #e4cb82 50%, #b8943f 100%)",
-        }}
-      />
+      {/* ── Gold bar ────────────────────────────────────────────────── */}
+      <div style={{ height: "4px", background: "linear-gradient(90deg,#c9a84c,#e8cc85,#c9a84c)" }} />
 
-      {/* =========================================================
-          LEARNER DETAILS
-      ========================================================= */}
-      <div
-        style={{
-          padding: "17px 38px",
-          borderBottom: "1px solid #dbe3ec",
-          background: "#f8fafc",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: "25px",
-          }}
-        >
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>Learner Details</div>
-
-            <div
-              style={{
-                marginTop: "4px",
-                fontSize: "19px",
-                lineHeight: 1.2,
-                fontWeight: "800",
-                color: "#0f172a",
-              }}
-            >
-              {displayValue(
-                `${student.first_name || ""} ${student.last_name || ""}`.trim(),
-              )}
-            </div>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                gap: "10px 20px",
-                marginTop: "11px",
-              }}
-            >
-              <div>
-                <div style={labelStyle}>Admission No.</div>
-                <div
-                  style={{
-                    marginTop: "2px",
-                    fontWeight: "700",
-                    color: "#334155",
-                  }}
-                >
-                  {displayValue(student.student_number)}
-                </div>
-              </div>
-
-              <div>
-                <div style={labelStyle}>Class</div>
-                <div
-                  style={{
-                    marginTop: "2px",
-                    fontWeight: "700",
-                    color: "#334155",
-                  }}
-                >
-                  {displayValue(cls.name)}
-                </div>
-              </div>
-
-              <div>
-                <div style={labelStyle}>Grade</div>
-                <div
-                  style={{
-                    marginTop: "2px",
-                    fontWeight: "700",
-                    color: "#334155",
-                  }}
-                >
-                  {displayValue(cls.grade)}
-                </div>
-              </div>
-
-              {student.gender && (
-                <div>
-                  <div style={labelStyle}>Gender</div>
-                  <div
-                    style={{
-                      marginTop: "2px",
-                      fontWeight: "700",
-                      color: "#334155",
-                      textTransform: "capitalize",
-                    }}
-                  >
-                    {student.gender}
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <div style={labelStyle}>Class Teacher</div>
-                <div
-                  style={{
-                    marginTop: "2px",
-                    fontWeight: "700",
-                    color: "#334155",
-                  }}
-                >
-                  {teacherName}
-                </div>
-              </div>
-
-              {cls.teacher_tsc && (
-                <div>
-                  <div style={labelStyle}>Teacher TSC No.</div>
-                  <div
-                    style={{
-                      marginTop: "2px",
-                      fontWeight: "700",
-                      color: "#334155",
-                    }}
-                  >
-                    {cls.teacher_tsc}
-                  </div>
-                </div>
-              )}
-            </div>
+      {/* ── Student strip ────────────────────────────────────────────── */}
+      <div style={{ padding: "18px 36px", background: "linear-gradient(180deg,#f8fafc,#fff)", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: "9px", color: "#94a3b8", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "4px" }}>Learner</div>
+          <div style={{ fontSize: "20px", fontWeight: "800", color: "#0f172a", letterSpacing: "-0.3px" }}>
+            {student.first_name} {student.last_name}
           </div>
 
-          {/* Overall performance */}
-          <div
-            style={{
-              width: "100px",
-              flexShrink: 0,
-              textAlign: "center",
-              borderLeft: "1px solid #dbe3ec",
-              paddingLeft: "20px",
-            }}
-          >
-            <div style={labelStyle}>
-              {isPrimary ? "Average" : "Mean Grade"}
-            </div>
-
-            <div
-              style={{
-                width: "70px",
-                height: "70px",
-                margin: "6px auto 0",
-                borderRadius: "50%",
-                background: isPrimary
-                  ? "#10213f"
-                  : meanGradeBackground,
-                border: isPrimary
-                  ? "4px solid #d7b75d"
-                  : `4px solid ${meanGradeColor}`,
-                boxSizing: "border-box",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <span
-                style={{
-                  color: isPrimary
-                    ? "#ffffff"
-                    : meanGradeColor,
-                  fontSize: isPrimary ? "19px" : "21px",
-                  fontWeight: "900",
-                }}
-              >
-                {isPrimary
-                  ? averagePercentage !== null
-                    ? `${averagePercentage}%`
-                    : "—"
-                  : meanGrade || "—"}
+          {/* Metadata row */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", marginTop: "6px" }}>
+            {[
+              { label: "Adm No", value: student.student_number },
+              { label: "Class",  value: cls?.name },
+              { label: "Grade",  value: cls?.grade },
+              ...(student.gender ? [{ label: "Gender", value: student.gender }] : []),
+            ].map(({ label, value }) => (
+              <span key={label} style={{ fontSize: "11px", color: "#64748b" }}>
+                {label}: <strong style={{ color: "#1a2744" }}>{value || "—"}</strong>
               </span>
-            </div>
-
-            {hasPosition && (
-              <div
-                style={{
-                  marginTop: "7px",
-                  fontSize: "8.5px",
-                  color: "#64748b",
-                  lineHeight: 1.3,
-                }}
-              >
-                <strong
-                  style={{
-                    color: "#10213f",
-                    fontSize: "10px",
-                  }}
-                >
-                  {positionSuffix(summary.position)}
-                </strong>{" "}
-                out of {displayValue(summary.class_size)}
-              </div>
-            )}
+            ))}
           </div>
+
+          {/* Class teacher */}
+          {cls?.teacher_name && (
+            <div style={{ marginTop: "5px", fontSize: "11px", color: "#64748b" }}>
+              Class Teacher: <strong style={{ color: "#1a2744" }}>{cls.teacher_name}</strong>
+            </div>
+          )}
+
+          {/* Position badge */}
+          {summary?.position && (
+            <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ background: "linear-gradient(135deg,#1a2744,#243355)", color: "#c9a84c", padding: "3px 12px", borderRadius: "12px", fontSize: "11px", fontWeight: "700", boxShadow: "0 2px 6px rgba(26,39,68,0.25)" }}>
+                {positionSuffix(summary.position)} out of {summary.class_size}
+              </span>
+              <span style={{ color: "#94a3b8", fontSize: "10px" }}>in class</span>
+            </div>
+          )}
+        </div>
+
+        {/* Mean grade circle */}
+        <div style={{ textAlign: "center", flexShrink: 0 }}>
+          <div style={{ width: "76px", height: "76px", borderRadius: "50%", background: `linear-gradient(135deg,${gradeColor},${gradeColor}cc)`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", boxShadow: `0 6px 18px ${gradeColor}44` }}>
+            <span style={{ color: "#fff", fontSize: "22px", fontWeight: "900", lineHeight: 1 }}>{meanGrade || "—"}</span>
+          </div>
+          <div style={{ fontSize: "9px", color: "#64748b", marginTop: "5px", textTransform: "uppercase", letterSpacing: "0.8px" }}>Mean Grade</div>
+          {meanGrade && GRADE_LABELS[meanGrade] && (
+            <div style={{ fontSize: "8px", color: gradeColor, fontWeight: "600", marginTop: "2px" }}>{GRADE_LABELS[meanGrade]}</div>
+          )}
         </div>
       </div>
 
-      {/* =========================================================
-          PERFORMANCE SUMMARY
-      ========================================================= */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: `repeat(${summaryItems.length}, 1fr)`,
-          borderBottom: "1px solid #dbe3ec",
-          background: "#ffffff",
-        }}
-      >
-        {summaryItems.map((item, index) => (
-          <div
-            key={item.label}
-            style={{
-              padding: "11px 10px",
-              textAlign: "center",
-              borderRight:
-                index < summaryItems.length - 1
-                  ? "1px solid #e2e8f0"
-                  : "none",
-            }}
-          >
-            <div
-              style={{
-                color: "#10213f",
-                fontSize: "15px",
-                fontWeight: "800",
-                lineHeight: 1.2,
-              }}
-            >
-              {item.value}
-            </div>
-
-            <div
-              style={{
-                marginTop: "3px",
-                color: "#64748b",
-                fontSize: "7.5px",
-                fontWeight: "700",
-                letterSpacing: "0.7px",
-                textTransform: "uppercase",
-              }}
-            >
-              {item.label}
-            </div>
+      {/* ── Summary strip ─────────────────────────────────────────────── */}
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${isPrimary ? 3 : 4}, 1fr)`, borderBottom: "2px solid #e2e8f0", background: "#f8fafc" }}>
+        {[
+          { label: "Exams sat",     value: examRows.length },
+          { label: "Average %",     value: `${summary?.average_percentage ?? "—"}%` },
+          ...(!isPrimary ? [{ label: "Total Points", value: `${totalPoints ?? "—"} / ${maxPoints ?? "—"}` }] : []),
+          { label: isPrimary ? "Primary" : "Junior School", value: isPrimary ? "Grades 4–6" : "Grades 7–8" },
+        ].map((s, i, arr) => (
+          <div key={i} style={{ padding: "12px 16px", textAlign: "center", borderRight: i < arr.length - 1 ? "1px solid #e2e8f0" : "none" }}>
+            <div style={{ fontSize: "18px", fontWeight: "800", color: "#1a2744" }}>{s.value}</div>
+            <div style={{ fontSize: "9px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.8px", marginTop: "2px" }}>{s.label}</div>
           </div>
         ))}
       </div>
 
-      {/* =========================================================
-          RESULTS
-      ========================================================= */}
-      <div style={{ padding: "18px 38px 12px" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "8px",
-          }}
-        >
-          <div>
-            <div
-              style={{
-                fontSize: "11px",
-                fontWeight: "800",
-                color: "#10213f",
-                textTransform: "uppercase",
-                letterSpacing: "1px",
-              }}
-            >
-              Examination Results
-            </div>
-
-            <div
-              style={{
-                marginTop: "2px",
-                fontSize: "8.5px",
-                color: "#64748b",
-              }}
-            >
-              {isPrimary
-                ? "Performance is shown as percentage achievement."
-                : "CBC performance is shown using grades and points."}
-            </div>
-          </div>
-
-          <div
-            style={{
-              padding: "4px 8px",
-              borderRadius: "4px",
-              background: "#f1f5f9",
-              color: "#475569",
-              fontSize: "8px",
-              fontWeight: "700",
-            }}
-          >
-            {safeExams.length}{" "}
-            {safeExams.length === 1 ? "Examination" : "Examinations"}
-          </div>
+      {/* ── Results table ─────────────────────────────────────────────── */}
+      <div style={{ padding: "20px 36px 0" }}>
+        <div style={{ fontSize: "9px", fontWeight: "800", color: "#94a3b8", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "10px" }}>
+          Examination Results
         </div>
 
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            tableLayout: "fixed",
-          }}
-        >
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr
-              style={{
-                background: "#10213f",
-              }}
-            >
-              <th
-                style={{
-                  width: isPrimary ? "31%" : "28%",
-                  padding: "8px 8px",
-                  textAlign: "left",
-                  color: "#ffffff",
-                  fontSize: "8px",
-                  fontWeight: "700",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.4px",
-                }}
-              >
-                Examination
-              </th>
-
-              <th
-                style={{
-                  width: isPrimary ? "13%" : "12%",
-                  padding: "8px 6px",
-                  textAlign: "center",
-                  color: "#ffffff",
-                  fontSize: "8px",
-                  fontWeight: "700",
-                  textTransform: "uppercase",
-                }}
-              >
-                Code
-              </th>
-
-              <th
-                style={{
-                  width: "9%",
-                  padding: "8px 5px",
-                  textAlign: "center",
-                  color: "#ffffff",
-                  fontSize: "8px",
-                  fontWeight: "700",
-                  textTransform: "uppercase",
-                }}
-              >
-                Correct
-              </th>
-
-              <th
-                style={{
-                  width: "9%",
-                  padding: "8px 5px",
-                  textAlign: "center",
-                  color: "#ffffff",
-                  fontSize: "8px",
-                  fontWeight: "700",
-                  textTransform: "uppercase",
-                }}
-              >
-                Out of
-              </th>
-
-              <th
-                style={{
-                  width: "8%",
-                  padding: "8px 5px",
-                  textAlign: "center",
-                  color: "#ffffff",
-                  fontSize: "8px",
-                  fontWeight: "700",
-                  textTransform: "uppercase",
-                }}
-              >
-                %
-              </th>
-
-              {isPrimary ? (
-                <th
-                  style={{
-                    width: "20%",
-                    padding: "8px 6px",
-                    textAlign: "left",
-                    color: "#ffffff",
-                    fontSize: "8px",
-                    fontWeight: "700",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Remark
+            <tr style={{ background: "linear-gradient(135deg,#1a2744,#243355)" }}>
+              {headers.map((h, i) => (
+                <th key={h} style={{ padding: "9px 10px", textAlign: i <= 1 ? "left" : "center", fontSize: "9.5px", fontWeight: "700", color: "#c9a84c", letterSpacing: "0.7px", textTransform: "uppercase", borderBottom: "2px solid #c9a84c" }}>
+                  {h}
                 </th>
-              ) : (
-                <>
-                  <th
-                    style={{
-                      width: "8%",
-                      padding: "8px 5px",
-                      textAlign: "center",
-                      color: "#ffffff",
-                      fontSize: "8px",
-                      fontWeight: "700",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Pts
-                  </th>
-
-                  <th
-                    style={{
-                      width: "9%",
-                      padding: "8px 5px",
-                      textAlign: "center",
-                      color: "#ffffff",
-                      fontSize: "8px",
-                      fontWeight: "700",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Grade
-                  </th>
-
-                  <th
-                    style={{
-                      width: "18%",
-                      padding: "8px 6px",
-                      textAlign: "left",
-                      color: "#ffffff",
-                      fontSize: "8px",
-                      fontWeight: "700",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Performance
-                  </th>
-                </>
-              )}
+              ))}
             </tr>
           </thead>
-
           <tbody>
-            {safeExams.length > 0 ? (
-              safeExams.map((row, index) => {
-                const gradeColor =
-                  GRADE_COLORS[row.grade] || "#64748b";
+            {examRows.length > 0 ? examRows.map((row, i) => {
+              const gColor = GRADE_COLORS[row.grade] || "#64748b";
+              const gBg    = GRADE_BG[row.grade]    || "#f1f5f9";
+              const pct    = parseFloat(row.percentage) || 0;
+              const pts    = GRADE_POINTS[row.grade] ?? null;
+              const even   = i % 2 === 0;
 
-                const gradeBg =
-                  GRADE_BG[row.grade] || "#f1f5f9";
+              return (
+                <tr key={row.exam_id} style={{ background: even ? "#fff" : "#f8fafc" }}>
+                  {/* Exam / Subject */}
+                  <td style={cell({ fontWeight: "600", color: "#0f172a" })}>
+                    <div>{row.exam_title}</div>
+                    <div style={{ fontSize: "10px", color: "#94a3b8", marginTop: "2px" }}>
+                      {formatSubjects(row.subjects)}
+                    </div>
+                  </td>
 
-                const rowBackground =
-                  index % 2 === 0
-                    ? "#ffffff"
-                    : "#f8fafc";
-
-                return (
-                  <tr
-                    key={row.exam_id ?? index}
-                    style={{
-                      background: rowBackground,
-                    }}
-                  >
-                    {/* Examination */}
-                    <td
-                      style={tableCell({
-                        fontWeight: "700",
-                        color: "#1e293b",
-                      })}
-                    >
-                      <div
-                        style={{
-                          fontSize: "10.5px",
-                          fontWeight: "800",
-                        }}
-                      >
-                        {displayValue(row.exam_title)}
-                      </div>
-
-                      <div
-                        style={{
-                          marginTop: "2px",
-                          color: "#64748b",
-                          fontSize: "8.5px",
-                          lineHeight: 1.35,
-                        }}
-                      >
-                        {formatSubjects(row.subjects)}
-                      </div>
-
-                      {row.exam_date && (
-                        <div
-                          style={{
-                            marginTop: "2px",
-                            color: "#94a3b8",
-                            fontSize: "8px",
-                          }}
-                        >
-                          {formatDate(row.exam_date)}
-                        </div>
-                      )}
-                    </td>
-
-                    {/* Subject code */}
-                    <td
-                      style={tableCell({
-                        textAlign: "center",
-                        fontSize: "8.5px",
-                        color: "#475569",
-                        wordBreak: "break-word",
-                      })}
-                    >
+                  {/* Subject code */}
+                  <td style={cell({ textAlign: "center" })}>
+                    <span style={{ background: "#e8edf4", color: "#374151", padding: "2px 7px", borderRadius: "8px", fontSize: "9.5px", fontWeight: "600" }}>
                       {formatSubjectCodes(row.subjects)}
+                    </span>
+                  </td>
+
+                  {/* Questions correct */}
+                  <td style={cell({ textAlign: "center", fontWeight: "700", color: "#1a2744", fontSize: "13px" })}>
+                    {row.questions_correct ?? "—"}
+                  </td>
+
+                  {/* Total questions */}
+                  <td style={cell({ textAlign: "center", color: "#64748b" })}>
+                    {row.total_questions ?? "—"}
+                  </td>
+
+                  {/* Percentage */}
+                  <td style={cell({ textAlign: "center", fontWeight: "700", color: gColor, fontSize: "12px" })}>
+                    {pct}%
+                  </td>
+
+                  {/* Fix 2: Remark (primary) OR Points (junior) */}
+                  {isPrimary ? (
+                    // Fix 2: primary gets grade label instead of dash
+                    <td style={cell({ fontSize: "10px", color: gColor, fontWeight: "600" })}>
+                      {row.grade && GRADE_SHORT_REMARKS[row.grade]
+                        ? GRADE_SHORT_REMARKS[row.grade]
+                        : (row.remarks || "—")}
                     </td>
-
-                    {/* Correct */}
-                    <td
-                      style={tableCell({
-                        textAlign: "center",
-                        fontWeight: "800",
-                        color: "#10213f",
-                      })}
-                    >
-                      {displayValue(row.questions_correct)}
+                  ) : (
+                    // Fix 2: junior gets percentage + points
+                    <td style={cell({ textAlign: "center" })}>
+                      <span style={{ background: gBg, color: gColor, padding: "2px 8px", borderRadius: "8px", fontSize: "11px", fontWeight: "700", display: "inline-block" }}>
+                        {pts !== null ? `${pts}/8` : "—"}
+                      </span>
                     </td>
+                  )}
 
-                    {/* Out of */}
-                    <td
-                      style={tableCell({
-                        textAlign: "center",
-                      })}
-                    >
-                      {displayValue(row.total_questions)}
-                    </td>
+                  {/* Performance bar */}
+                  <td style={cell({ width: "100px", padding: "8px 12px" })}>
+                    <div style={{ background: "#e2e8f0", borderRadius: "999px", height: "7px", overflow: "hidden" }}>
+                      <div style={{ width: `${Math.min(pct, 100)}%`, height: "100%", background: `linear-gradient(90deg,${gColor}99,${gColor})`, borderRadius: "999px" }} />
+                    </div>
+                    <div style={{ fontSize: "9px", color: "#94a3b8", marginTop: "2px", textAlign: "center" }}>
+                      {GRADE_LABELS[row.grade] || ""}
+                    </div>
+                  </td>
 
-                    {/* Percentage */}
-                    <td
-                      style={tableCell({
-                        textAlign: "center",
-                        fontWeight: "800",
-                        color:
-                          row.grade
-                            ? gradeColor
-                            : "#10213f",
-                      })}
-                    >
-                      {row.percentage != null
-                        ? `${row.percentage}%`
-                        : "—"}
-                    </td>
-
-                    {/* Primary remark */}
-                    {isPrimary && (
-                      <td
-                        style={tableCell({
-                          fontSize: "9px",
-                          color: "#475569",
-                        })}
-                      >
-                        {displayValue(row.remarks)}
-                      </td>
-                    )}
-
-                    {/* Junior points */}
-                    {isJunior && (
-                      <td
-                        style={tableCell({
-                          textAlign: "center",
-                        })}
-                      >
-                        {row.points != null ? (
-                          <span
-                            style={{
-                              display: "inline-block",
-                              minWidth: "24px",
-                              padding: "3px 5px",
-                              borderRadius: "4px",
-                              background: gradeBg,
-                              color: gradeColor,
-                              fontSize: "9px",
-                              fontWeight: "800",
-                              boxSizing: "border-box",
-                            }}
-                          >
-                            {row.points}
-                          </span>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                    )}
-
-                    {/* Junior grade */}
-                    {isJunior && (
-                      <td
-                        style={tableCell({
-                          textAlign: "center",
-                        })}
-                      >
-                        {row.grade ? (
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              minWidth: "29px",
-                              height: "24px",
-                              padding: "0 5px",
-                              borderRadius: "4px",
-                              background: gradeColor,
-                              color: "#ffffff",
-                              fontSize: "8.5px",
-                              fontWeight: "900",
-                            }}
-                          >
-                            {row.grade}
-                          </span>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                    )}
-
-                    {/* Junior performance */}
-                    {isJunior && (
-                      <td
-                        style={tableCell({
-                          fontSize: "8.5px",
-                          color: "#475569",
-                        })}
-                      >
-                        {displayValue(row.grade_label)}
-                      </td>
-                    )}
-                  </tr>
-                );
-              })
-            ) : (
+                  {/* Grade circle */}
+                  <td style={cell({ textAlign: "center" })}>
+                    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "30px", height: "30px", borderRadius: "50%", background: gColor, color: "#fff", fontSize: "9px", fontWeight: "800", boxShadow: `0 2px 6px ${gColor}55` }}>
+                      {row.grade || "—"}
+                    </span>
+                  </td>
+                </tr>
+              );
+            }) : (
               <tr>
-                <td
-                  colSpan={isPrimary ? 6 : 8}
-                  style={{
-                    padding: "25px 10px",
-                    textAlign: "center",
-                    color: "#94a3b8",
-                    fontSize: "10px",
-                    borderBottom: "1px solid #e2e8f0",
-                  }}
-                >
-                  No examination results are available
-                  for this term.
+                <td colSpan={headers.length} style={{ padding: "24px", textAlign: "center", color: "#94a3b8" }}>
+                  No results found
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-
-        {/* Important data-model note */}
-        <div
-          style={{
-            marginTop: "7px",
-            color: "#94a3b8",
-            fontSize: "7.5px",
-            lineHeight: 1.35,
-          }}
-        >
-          Note: Where an examination covers multiple subjects,
-          the score shown represents the learner's total
-          performance for that examination; subject names indicate
-          the subjects covered and do not represent separate
-          subject scores.
-        </div>
       </div>
 
-      {/* =========================================================
-          TEACHER COMMENT
-      ========================================================= */}
-      {summary.teacher_comment && (
-        <div style={{ padding: "3px 38px 13px" }}>
-          <div
-            style={{
-              border: "1px solid #dbe3ec",
-              borderLeft: "4px solid #d7b75d",
-              borderRadius: "5px",
-              background: "#f8fafc",
-              padding: "11px 14px",
-            }}
-          >
-            <div style={labelStyle}>
-              Class Teacher's Comment
+      {/* ── Fix 1 + 2: Analytics section below the table ─────────────── */}
+      {examRows.length > 0 && (
+        <div style={{ margin: "0 36px 16px", padding: "14px 16px", background: "#f8fafc", border: "1px solid #e2e8f0", borderTop: "2px solid #c9a84c", borderRadius: "0 0 8px 8px" }}>
+          <div style={{ fontSize: "9px", fontWeight: "800", color: "#94a3b8", letterSpacing: "1.2px", textTransform: "uppercase", marginBottom: "10px" }}>
+            Performance Analytics
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+
+            {/* Total percentage */}
+            <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "10px 12px", textAlign: "center" }}>
+              <div style={{ fontSize: "18px", fontWeight: "900", color: "#1a2744" }}>
+                {Math.round(totalPercentage)}
+              </div>
+              <div style={{ fontSize: "9px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.7px", marginTop: "2px" }}>
+                Total % ({maxPercentage} max)
+              </div>
             </div>
 
-            <p
-              style={{
-                margin: "5px 0 0",
-                color: "#334155",
-                fontSize: "10px",
-                lineHeight: 1.55,
-              }}
-            >
-              {summary.teacher_comment}
-            </p>
+            {/* Junior only: total points */}
+            {!isPrimary && (
+              <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "10px 12px", textAlign: "center" }}>
+                <div style={{ fontSize: "18px", fontWeight: "900", color: "#1a2744" }}>
+                  {totalPoints} / {maxPoints}
+                </div>
+                <div style={{ fontSize: "9px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.7px", marginTop: "2px" }}>
+                  Total Points
+                </div>
+              </div>
+            )}
 
-            {teacherName !== "—" && (
-              <div
-                style={{
-                  marginTop: "6px",
-                  textAlign: "right",
-                  color: "#64748b",
-                  fontSize: "8.5px",
-                  fontStyle: "italic",
-                }}
-              >
-                — {teacherName}
+            {/* Strongest subject */}
+            {strongestExam && (
+              <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "8px", padding: "10px 12px" }}>
+                <div style={{ fontSize: "9px", color: "#15803d", textTransform: "uppercase", letterSpacing: "0.7px", fontWeight: "700", marginBottom: "4px" }}>
+                  ↑ Strongest
+                </div>
+                <div style={{ fontSize: "11px", fontWeight: "700", color: "#15803d", lineHeight: 1.3 }}>
+                  {formatSubjects(strongestExam.subjects)}
+                </div>
+                <div style={{ fontSize: "10px", color: "#15803d", opacity: 0.8, marginTop: "2px" }}>
+                  {parseFloat(strongestExam.percentage).toFixed(1)}% · {strongestExam.grade}
+                </div>
+              </div>
+            )}
+
+            {/* Weakest subject */}
+            {weakestExam && weakestExam.exam_id !== strongestExam?.exam_id && (
+              <div style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: "8px", padding: "10px 12px" }}>
+                <div style={{ fontSize: "9px", color: "#c2410c", textTransform: "uppercase", letterSpacing: "0.7px", fontWeight: "700", marginBottom: "4px" }}>
+                  ↓ Needs focus
+                </div>
+                <div style={{ fontSize: "11px", fontWeight: "700", color: "#c2410c", lineHeight: 1.3 }}>
+                  {formatSubjects(weakestExam.subjects)}
+                </div>
+                <div style={{ fontSize: "10px", color: "#c2410c", opacity: 0.8, marginTop: "2px" }}>
+                  {parseFloat(weakestExam.percentage).toFixed(1)}% · {weakestExam.grade}
+                </div>
+              </div>
+            )}
+
+            {/* Position */}
+            {summary?.position && (
+              <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "8px", padding: "10px 12px", textAlign: "center" }}>
+                <div style={{ fontSize: "18px", fontWeight: "900", color: "#1e40af" }}>
+                  {positionSuffix(summary.position)}
+                </div>
+                <div style={{ fontSize: "9px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.7px", marginTop: "2px" }}>
+                  Class position
+                </div>
+                <div style={{ fontSize: "9px", color: "#1e40af", marginTop: "2px" }}>
+                  out of {summary.class_size}
+                </div>
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* =========================================================
-          SIGNATURES + SCHOOL DATES
-      ========================================================= */}
-      <div style={{ padding: "0 38px 18px" }}>
-        <div
-          style={{
-            borderTop: "1px solid #dbe3ec",
-            paddingTop: "13px",
-          }}
-        >
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "28px",
-            }}
-          >
-            {[
-              "Principal's Signature",
-              "Parent / Guardian Signature",
-            ].map((label) => (
-              <div key={label}>
-                <div style={labelStyle}>{label}</div>
-
-                <div
-                  style={{
-                    height: "30px",
-                    borderBottom: "1px solid #94a3b8",
-                    marginTop: "5px",
-                  }}
-                />
-
-                <div
-                  style={{
-                    marginTop: "4px",
-                    fontSize: "7.5px",
-                    color: "#94a3b8",
-                  }}
-                >
-                  Signature & Date
-                </div>
-              </div>
-            ))}
+      {/* ── Teacher comment ────────────────────────────────────────── */}
+      {(summary?.teacher_comment || TEACHER_COMMENTS[meanGrade]) && (
+        <div style={{ padding: "0 36px 16px" }}>
+          <div style={{ background: "linear-gradient(135deg,#f8fafc,#f0f4f8)", border: "1px solid #e2e8f0", borderLeft: "4px solid #c9a84c", borderRadius: "8px", padding: "14px 18px" }}>
+            <div style={{ fontSize: "9px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "6px", fontWeight: "700" }}>
+              Class Teacher's Comment
+            </div>
+            <p style={{ fontSize: "11.5px", color: "#334155", lineHeight: "1.65", margin: 0 }}>
+              {summary?.teacher_comment || TEACHER_COMMENTS[meanGrade]}
+            </p>
+            {cls?.teacher_name && (
+              <p style={{ fontSize: "10px", color: "#94a3b8", margin: "8px 0 0", textAlign: "right", fontStyle: "italic" }}>
+                — {cls.teacher_name}
+              </p>
+            )}
           </div>
+        </div>
+      )}
 
+      {/* ── Fix 3: Signature + dates section ─────────────────────────── */}
+      <div style={{ padding: "0 36px 24px" }}>
+        <div style={{ border: "1px solid #e2e8f0", borderRadius: "10px", padding: "16px 20px", background: "#fafbfc" }}>
+
+          {/* Closing / Opening dates */}
           {(closingDate || openingDate) && (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "28px",
-                marginTop: "14px",
-                paddingTop: "10px",
-                borderTop: "1px dashed #dbe3ec",
-              }}
-            >
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "16px", paddingBottom: "14px", borderBottom: "1px dashed #e2e8f0" }}>
               {closingDate && (
                 <div>
-                  <div style={labelStyle}>
-                    School Closing Date
-                  </div>
-
-                  <div
-                    style={{
-                      marginTop: "3px",
-                      color: "#10213f",
-                      fontSize: "10px",
-                      fontWeight: "800",
-                    }}
-                  >
-                    {closingDate}
-                  </div>
+                  <div style={{ fontSize: "9px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "3px" }}>School Closing Date</div>
+                  <div style={{ fontSize: "12px", fontWeight: "700", color: "#1a2744" }}>{closingDate}</div>
                 </div>
               )}
-
               {openingDate && (
                 <div>
-                  <div style={labelStyle}>
-                    School Re-opening Date
-                  </div>
-
-                  <div
-                    style={{
-                      marginTop: "3px",
-                      color: "#10213f",
-                      fontSize: "10px",
-                      fontWeight: "800",
-                    }}
-                  >
-                    {openingDate}
-                  </div>
+                  <div style={{ fontSize: "9px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "3px" }}>School Re-opening Date</div>
+                  <div style={{ fontSize: "12px", fontWeight: "700", color: "#1a2744" }}>{openingDate}</div>
                 </div>
               )}
             </div>
           )}
+
+          {/* Three signature slots */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "20px" }}>
+            {[
+              "Class Teacher's Signature & Date",
+              "Head Teacher's Signature & Date",
+              "Parent / Guardian Signature & Date",
+            ].map((label) => (
+              <div key={label}>
+                <div style={{ fontSize: "9px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.7px", marginBottom: "6px", fontWeight: "600" }}>
+                  {label}
+                </div>
+                {/* Signature line */}
+                <div style={{ borderBottom: "1.5px solid #cbd5e1", paddingBottom: "24px", marginBottom: "4px" }} />
+                {/* Date line below */}
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ fontSize: "8px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px" }}>Date:</span>
+                  <div style={{ flex: 1, borderBottom: "1px solid #e2e8f0", paddingBottom: "2px" }} />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* =========================================================
-          FOOTER
-      ========================================================= */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: "36px",
-          padding: "0 38px",
-          boxSizing: "border-box",
-          background: "#10213f",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <span
-          style={{
-            color: "#cbd5e1",
-            fontSize: "8px",
-          }}
-        >
-          {schoolName} · Official Academic Report
-        </span>
-
-        <span
-          style={{
-            color: "#d7b75d",
-            fontSize: "8px",
-            fontWeight: "800",
-            letterSpacing: "0.8px",
-          }}
-        >
-          CONFIDENTIAL
-        </span>
+      {/* ── Footer ────────────────────────────────────────────────── */}
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(135deg,#1a2744,#0f1a30)", padding: "10px 36px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ color: "#64748b", fontSize: "9.5px" }}>{schoolName} · Official Academic Report</span>
+        <span style={{ color: "#c9a84c", fontSize: "9.5px", fontWeight: "700" }}>CONFIDENTIAL</span>
       </div>
     </div>
   );
