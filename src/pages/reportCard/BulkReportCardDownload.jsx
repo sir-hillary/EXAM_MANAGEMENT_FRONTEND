@@ -13,8 +13,8 @@ import { useClassTermReportCards } from "../../hooks/useClasses";
 import { useClasses } from "../../hooks/useClasses";
 import PageHeader from "../../components/ui/PageHeader";
 import SelectField from "../../components/ui/SelectField";
-import { Spinner } from "../../components/ui/Spinner";
 import ReportCardDocument from "./ReportCardDocument";
+import Spinner from "../../components/ui/spinner";
 
 const currentAcademicYear = () => {
   const y = new Date().getFullYear();
