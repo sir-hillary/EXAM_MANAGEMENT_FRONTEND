@@ -83,9 +83,7 @@ const formatPercentage = (value) => {
 
   const number = Number(value);
 
-  return Number.isFinite(number)
-    ? `${number.toFixed(1)}%`
-    : "—";
+  return Number.isFinite(number) ? `${number.toFixed(1)}%` : "—";
 };
 
 const formatNumber = (value) => {
@@ -95,15 +93,12 @@ const formatNumber = (value) => {
 
   const number = Number(value);
 
-  return Number.isFinite(number)
-    ? number.toLocaleString()
-    : "—";
+  return Number.isFinite(number) ? number.toLocaleString() : "—";
 };
 
 const getStudentName = (student) =>
-  [student?.first_name, student?.last_name]
-    .filter(Boolean)
-    .join(" ") || "Unnamed student";
+  [student?.first_name, student?.last_name].filter(Boolean).join(" ") ||
+  "Unnamed student";
 
 const getPositionStyle = (position) => {
   switch (Number(position)) {
@@ -137,13 +132,7 @@ const getLearnerGrade = (student, isPrimary) => {
   return getPrimaryGrade(student.avg_percentage);
 };
 
-const StatCard = ({
-  icon: Icon,
-  label,
-  value,
-  description,
-  iconClass,
-}) => (
+const StatCard = ({ icon: Icon, label, value, description, iconClass }) => (
   <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
@@ -156,9 +145,7 @@ const StatCard = ({
         </p>
 
         {description && (
-          <p className="mt-1 text-xs text-gray-500">
-            {description}
-          </p>
+          <p className="mt-1 text-xs text-gray-500">{description}</p>
         )}
       </div>
 
@@ -180,85 +167,47 @@ const ClassPerformance = () => {
   const [examType, setExamType] = useState("End-term");
   const [downloading, setDownloading] = useState(false);
 
-  const validAcademicYear =
-    /^\d{4}\/\d{4}$/.test(academicYear.trim());
+  const validAcademicYear = /^\d{4}\/\d{4}$/.test(academicYear.trim());
 
   const filtersReady =
-    Boolean(termNumber) &&
-    validAcademicYear &&
-    Boolean(examType);
+    Boolean(termNumber) && validAcademicYear && Boolean(examType);
 
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useClassPerformance(
-    classId,
-    filtersReady
-      ? {
-          term_number: termNumber,
-          academic_year: academicYear.trim(),
-          exam_type: examType,
-        }
-      : null,
-  );
+  const { data, isLoading, isError, error, refetch, isFetching } =
+    useClassPerformance(
+      classId,
+      filtersReady
+        ? {
+            term_number: termNumber,
+            academic_year: academicYear.trim(),
+            exam_type: examType,
+          }
+        : null,
+    );
 
   const report = data?.data;
   const students = report?.students ?? [];
 
-  const division = report?.class
-    ? getDivision(report.class.grade)
-    : null;
+  const division = report?.class ? getDivision(report.class.grade) : null;
 
   const isPrimary = report?.division === "primary";
 
   const meta = report?.meta ?? {};
 
-  const classAverage =
-    meta.class_avg_percentage ??
-    meta.class_average ??
-    null;
+  const classAverage = meta.class_avg_percentage ?? meta.class_average ?? null;
 
   const handleDownload = async () => {
-    if (!report || !students.length) {
-      toast.error("There is no performance data to download");
-      return;
-    }
-
     setDownloading(true);
-
     try {
-      const className = report.class?.name || "Class";
-
-      const safeClassName = className.replace(
-        /[^\w-]+/g,
-        "_",
-      );
-
-      const filename =
-        `${safeClassName}_Term-${termNumber}_` +
-        `${academicYear}_${examType.replace(/\s+/g, "-")}_` +
-        `Performance.pdf`;
-
-      await downloadReportCard(
-        pdfRef,
-        filename,
-        "landscape",
-      );
-
+      const subjectCount = report?.subjectSummaries?.length ?? 0;
+      // Landscape for any class with more than 6 subjects,
+      // portrait for smaller classes
+      const orientation = subjectCount > 6 ? "landscape" : "portrait";
+      const filename = `${report.class.name}_${examType.replace(/\s+/g, "-")}_Performance.pdf`;
+      await downloadReportCard(pdfRef, filename, orientation);
       toast.success("Performance report downloaded");
     } catch (err) {
-      console.error(
-        "Class performance PDF error:",
-        err,
-      );
-
-      toast.error(
-        "PDF generation failed — try again",
-      );
+      console.error(err);
+      toast.error("PDF generation failed — try again");
     } finally {
       setDownloading(false);
     }
@@ -292,9 +241,7 @@ const ClassPerformance = () => {
         description={
           report?.class
             ? `${
-                division?.label ??
-                report.division ??
-                "School"
+                division?.label ?? report.division ?? "School"
               } · Grade ${report.class.grade}`
             : "Review class results, learner rankings, and performance"
         }
@@ -308,10 +255,7 @@ const ClassPerformance = () => {
             >
               {downloading ? (
                 <>
-                  <Loader2
-                    size={16}
-                    className="animate-spin"
-                  />
+                  <Loader2 size={16} className="animate-spin" />
                   Generating PDF...
                 </>
               ) : (
@@ -330,10 +274,7 @@ const ClassPerformance = () => {
       ========================================================= */}
       <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
         <div className="mb-4 flex items-center gap-2">
-          <CalendarDays
-            size={18}
-            className="text-brand-600"
-          />
+          <CalendarDays size={18} className="text-brand-600" />
 
           <div>
             <h2 className="text-sm font-semibold text-gray-900">
@@ -350,17 +291,12 @@ const ClassPerformance = () => {
           <SelectField
             label="Academic term"
             value={termNumber}
-            onChange={(e) =>
-              setTermNumber(e.target.value)
-            }
+            onChange={(e) => setTermNumber(e.target.value)}
           >
             <option value="">Select term</option>
 
             {TERMS.map((term) => (
-              <option
-                key={term.value}
-                value={term.value}
-              >
+              <option key={term.value} value={term.value}>
                 {term.label}
               </option>
             ))}
@@ -378,9 +314,7 @@ const ClassPerformance = () => {
               id="academic-year"
               type="text"
               value={academicYear}
-              onChange={(e) =>
-                setAcademicYear(e.target.value)
-              }
+              onChange={(e) => setAcademicYear(e.target.value)}
               placeholder="e.g. 2025/2026"
               className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
             />
@@ -389,9 +323,7 @@ const ClassPerformance = () => {
           <SelectField
             label="Exam type"
             value={examType}
-            onChange={(e) =>
-              setExamType(e.target.value)
-            }
+            onChange={(e) => setExamType(e.target.value)}
           >
             {EXAM_TYPES.map((type) => (
               <option key={type} value={type}>
@@ -409,27 +341,19 @@ const ClassPerformance = () => {
             >
               <RefreshCw
                 size={15}
-                className={
-                  isFetching
-                    ? "animate-spin"
-                    : ""
-                }
+                className={isFetching ? "animate-spin" : ""}
               />
 
-              {isFetching
-                ? "Refreshing..."
-                : "Refresh report"}
+              {isFetching ? "Refreshing..." : "Refresh report"}
             </button>
           </div>
         </div>
 
-        {academicYear &&
-          !validAcademicYear && (
-            <p className="mt-2 text-xs text-amber-600">
-              Enter the academic year in YYYY/YYYY
-              format.
-            </p>
-          )}
+        {academicYear && !validAcademicYear && (
+          <p className="mt-2 text-xs text-amber-600">
+            Enter the academic year in YYYY/YYYY format.
+          </p>
+        )}
       </section>
 
       {/* =========================================================
@@ -437,18 +361,14 @@ const ClassPerformance = () => {
       ========================================================= */}
       {!filtersReady ? (
         <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-12 text-center">
-          <CalendarDays
-            className="mx-auto mb-3 text-gray-400"
-            size={28}
-          />
+          <CalendarDays className="mx-auto mb-3 text-gray-400" size={28} />
 
           <h3 className="text-sm font-semibold text-gray-800">
             Select a term and academic year
           </h3>
 
           <p className="mt-1 text-sm text-gray-500">
-            Choose the academic period to load the
-            class performance report.
+            Choose the academic period to load the class performance report.
           </p>
         </div>
       ) : isLoading ? (
@@ -458,8 +378,7 @@ const ClassPerformance = () => {
       ) : isError ? (
         <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-center">
           <p className="text-sm font-medium text-red-700">
-            {error?.message ||
-              "Unable to load class performance."}
+            {error?.message || "Unable to load class performance."}
           </p>
 
           <button
@@ -473,18 +392,15 @@ const ClassPerformance = () => {
         </div>
       ) : !report || students.length === 0 ? (
         <div className="rounded-xl border border-gray-200 bg-white px-4 py-12 text-center">
-          <Users
-            className="mx-auto mb-3 text-gray-300"
-            size={30}
-          />
+          <Users className="mx-auto mb-3 text-gray-300" size={30} />
 
           <h3 className="text-sm font-semibold text-gray-800">
             No performance records found
           </h3>
 
           <p className="mt-1 text-sm text-gray-500">
-            No results were found for {examType},
-            Term {termNumber}, {academicYear}.
+            No results were found for {examType}, Term {termNumber},{" "}
+            {academicYear}.
           </p>
         </div>
       ) : (
@@ -496,10 +412,7 @@ const ClassPerformance = () => {
             <StatCard
               icon={Users}
               label="Learners assessed"
-              value={formatNumber(
-                meta.total_students ??
-                  students.length,
-              )}
+              value={formatNumber(meta.total_students ?? students.length)}
               description="Learners with recorded results"
               iconClass="bg-blue-50 text-blue-600"
             />
@@ -507,9 +420,7 @@ const ClassPerformance = () => {
             <StatCard
               icon={TrendingUp}
               label="Class average"
-              value={formatPercentage(
-                classAverage,
-              )}
+              value={formatPercentage(classAverage)}
               description="Average percentage"
               iconClass="bg-emerald-50 text-emerald-600"
             />
@@ -517,19 +428,10 @@ const ClassPerformance = () => {
             <StatCard
               icon={Award}
               label="Top learner"
-              value={
-                meta.top_student
-                  ? getStudentName(
-                      meta.top_student,
-                    )
-                  : "—"
-              }
+              value={meta.top_student ? getStudentName(meta.top_student) : "—"}
               description={
                 meta.top_student
-                  ? formatPercentage(
-                      meta.top_student
-                        .avg_percentage,
-                    )
+                  ? formatPercentage(meta.top_student.avg_percentage)
                   : "No top learner available"
               }
               iconClass="bg-amber-50 text-amber-600"
@@ -538,9 +440,7 @@ const ClassPerformance = () => {
             <StatCard
               icon={UserRound}
               label="Learner distribution"
-              value={`${formatNumber(
-                meta.boys ?? 0,
-              )} boys · ${formatNumber(
+              value={`${formatNumber(meta.boys ?? 0)} boys · ${formatNumber(
                 meta.girls ?? 0,
               )} girls`}
               description="Learners represented"
@@ -553,8 +453,7 @@ const ClassPerformance = () => {
           ===================================================== */}
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-brand-50 px-4 py-3 text-sm text-brand-900">
             <span className="font-medium">
-              {report.class?.name} · Term{" "}
-              {termNumber} · {academicYear}
+              {report.class?.name} · Term {termNumber} · {academicYear}
             </span>
 
             <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-brand-700">
@@ -579,9 +478,7 @@ const ClassPerformance = () => {
 
               <span className="text-xs text-gray-500">
                 {students.length} learner
-                {students.length !== 1
-                  ? "s"
-                  : ""}
+                {students.length !== 1 ? "s" : ""}
               </span>
             </div>
 
@@ -589,45 +486,27 @@ const ClassPerformance = () => {
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                   <tr>
-                    <th className="px-4 py-3">
-                      Position
-                    </th>
+                    <th className="px-4 py-3">Position</th>
 
-                    <th className="px-4 py-3">
-                      Learner
-                    </th>
+                    <th className="px-4 py-3">Learner</th>
 
-                    <th className="px-4 py-3">
-                      Adm. No.
-                    </th>
+                    <th className="px-4 py-3">Adm. No.</th>
 
-                    <th className="px-4 py-3 text-right">
-                      Total %
-                    </th>
+                    <th className="px-4 py-3 text-right">Total %</th>
 
-                    <th className="px-4 py-3">
-                      Grade
-                    </th>
+                    <th className="px-4 py-3">Grade</th>
 
-                    <th className="px-4 py-3 text-right">
-                      Exams
-                    </th>
+                    <th className="px-4 py-3 text-right">Exams</th>
 
                     {!isPrimary && (
-                      <th className="px-4 py-3 text-right">
-                        Points
-                      </th>
+                      <th className="px-4 py-3 text-right">Points</th>
                     )}
                   </tr>
                 </thead>
 
                 <tbody className="divide-y divide-gray-100">
                   {students.map((student) => {
-                    const learnerGrade =
-                      getLearnerGrade(
-                        student,
-                        isPrimary,
-                      );
+                    const learnerGrade = getLearnerGrade(student, isPrimary);
 
                     return (
                       <tr
@@ -641,33 +520,26 @@ const ClassPerformance = () => {
                               student.position,
                             )}`}
                           >
-                            {positionSuffix(
-                              student.position,
-                            )}
+                            {positionSuffix(student.position)}
                           </span>
                         </td>
 
                         {/* Learner */}
                         <td className="whitespace-nowrap px-4 py-3">
                           <span className="font-medium text-gray-900">
-                            {getStudentName(
-                              student,
-                            )}
+                            {getStudentName(student)}
                           </span>
                         </td>
 
                         {/* Admission number */}
                         <td className="whitespace-nowrap px-4 py-3 text-gray-500">
-                          {student.student_number ||
-                            "—"}
+                          {student.student_number || "—"}
                         </td>
 
                         {/* Total percentage */}
                         <td className="whitespace-nowrap px-4 py-3 text-right">
                           <span className="font-bold text-gray-900">
-                            {formatPercentage(
-                              student.avg_percentage,
-                            )}
+                            {formatPercentage(student.avg_percentage)}
                           </span>
                         </td>
 
@@ -675,32 +547,24 @@ const ClassPerformance = () => {
                         <td className="whitespace-nowrap px-4 py-3">
                           {learnerGrade ? (
                             <span
-                              className={`badge ${gradeBadge(
-                                learnerGrade,
-                              )}`}
+                              className={`badge ${gradeBadge(learnerGrade)}`}
                             >
                               {learnerGrade}
                             </span>
                           ) : (
-                            <span className="text-gray-400">
-                              —
-                            </span>
+                            <span className="text-gray-400">—</span>
                           )}
                         </td>
 
                         {/* Exams */}
                         <td className="whitespace-nowrap px-4 py-3 text-right text-gray-700">
-                          {formatNumber(
-                            student.exams_count,
-                          )}
+                          {formatNumber(student.exams_count)}
                         </td>
 
                         {/* Junior points */}
                         {!isPrimary && (
                           <td className="whitespace-nowrap px-4 py-3 text-right text-gray-700">
-                            {formatNumber(
-                              student.total_points,
-                            )}
+                            {formatNumber(student.total_points)}
                           </td>
                         )}
                       </tr>
@@ -726,11 +590,7 @@ const ClassPerformance = () => {
             </div>
 
             {students.map((student) => {
-              const learnerGrade =
-                getLearnerGrade(
-                  student,
-                  isPrimary,
-                );
+              const learnerGrade = getLearnerGrade(student, isPrimary);
 
               return (
                 <article
@@ -744,31 +604,23 @@ const ClassPerformance = () => {
                           student.position,
                         )}`}
                       >
-                        {positionSuffix(
-                          student.position,
-                        )}
+                        {positionSuffix(student.position)}
                       </span>
 
                       <div className="min-w-0">
                         <h3 className="truncate text-sm font-semibold text-gray-900">
-                          {getStudentName(
-                            student,
-                          )}
+                          {getStudentName(student)}
                         </h3>
 
                         <p className="mt-0.5 text-xs text-gray-500">
-                          Adm. No.{" "}
-                          {student.student_number ||
-                            "—"}
+                          Adm. No. {student.student_number || "—"}
                         </p>
                       </div>
                     </div>
 
                     {learnerGrade && (
                       <span
-                        className={`badge shrink-0 ${gradeBadge(
-                          learnerGrade,
-                        )}`}
+                        className={`badge shrink-0 ${gradeBadge(learnerGrade)}`}
                       >
                         {learnerGrade}
                       </span>
@@ -777,21 +629,15 @@ const ClassPerformance = () => {
 
                   <div className="mt-4 grid grid-cols-2 gap-3 rounded-lg bg-gray-50 p-3">
                     <div>
-                      <p className="text-xs text-gray-500">
-                        Total %
-                      </p>
+                      <p className="text-xs text-gray-500">Total %</p>
 
                       <p className="mt-1 text-lg font-bold text-gray-900">
-                        {formatPercentage(
-                          student.avg_percentage,
-                        )}
+                        {formatPercentage(student.avg_percentage)}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-xs text-gray-500">
-                        Grade
-                      </p>
+                      <p className="text-xs text-gray-500">Grade</p>
 
                       <p className="mt-1 text-lg font-bold text-gray-900">
                         {learnerGrade || "—"}
@@ -799,27 +645,19 @@ const ClassPerformance = () => {
                     </div>
 
                     <div>
-                      <p className="text-xs text-gray-500">
-                        Exams assessed
-                      </p>
+                      <p className="text-xs text-gray-500">Exams assessed</p>
 
                       <p className="mt-1 text-sm font-semibold text-gray-800">
-                        {formatNumber(
-                          student.exams_count,
-                        )}
+                        {formatNumber(student.exams_count)}
                       </p>
                     </div>
 
                     {!isPrimary && (
                       <div>
-                        <p className="text-xs text-gray-500">
-                          Total points
-                        </p>
+                        <p className="text-xs text-gray-500">Total points</p>
 
                         <p className="mt-1 text-sm font-semibold text-gray-800">
-                          {formatNumber(
-                            student.total_points,
-                          )}
+                          {formatNumber(student.total_points)}
                         </p>
                       </div>
                     )}
@@ -843,10 +681,7 @@ const ClassPerformance = () => {
             }}
           >
             <div ref={pdfRef}>
-              <ClassPerformancePDF
-                data={report}
-                examType={examType}
-              />
+              <ClassPerformancePDF data={report} examType={examType} />
             </div>
           </div>
         </>

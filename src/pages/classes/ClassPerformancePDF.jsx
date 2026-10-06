@@ -181,10 +181,7 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
 ) {
   if (!data) return null;
 
-  const {
-    class: cls = {},
-    students: rawStudents = [],
-  } = data;
+  const { class: cls = {}, students: rawStudents = [] } = data;
 
   const generatedOn = new Date().toLocaleDateString(undefined, {
     year: "numeric",
@@ -264,14 +261,15 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
       ref={ref}
       style={{
         width: `${PAGE_WIDTH}px`,
-        maxWidth: `${PAGE_WIDTH}px`,
-        minHeight: "792px",
-        backgroundColor: COLORS.white,
-        color: COLORS.text,
+        minWidth: `${PAGE_WIDTH}px`,
+        minHeight: "794px", // ← landscape A4 height at 96dpi (297mm wide = 1123px, 210mm tall = 794px)
+        backgroundColor: "#fff",
         fontFamily: "'Segoe UI', Arial, sans-serif",
         fontSize: bodyFontSize,
+        color: "#1f2937",
+        display: "flex",
+        flexDirection: "column",
         boxSizing: "border-box",
-        overflow: "hidden",
       }}
     >
       {/* ── Header (unchanged) ─────────────────────────────────────── */}
@@ -950,27 +948,22 @@ const ClassPerformancePDF = forwardRef(function ClassPerformancePDF(
       )}
 
       {/* ── Footer (unchanged) ────────────────────────────────────── */}
+      {/* Footer — add marginTop: "auto" so it sits at bottom of landscape page */}
       <div
         style={{
-          background: COLORS.navy,
-          padding: "7px 32px",
+          background: "#1a2744",
+          padding: "8px 36px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          boxSizing: "border-box",
+          marginTop: "auto", // ← pushes footer to bottom of 794px
         }}
       >
-        <span style={{ color: "#cbd5e1", fontSize: "7px" }}>
+        <span style={{ color: "#64748b", fontSize: "9px" }}>
           {schoolName} · Class Performance Report
         </span>
-        <span
-          style={{
-            color: COLORS.goldLight,
-            fontSize: "7px",
-            fontWeight: "600",
-          }}
-        >
-          {generatedOn} · Exam Management System
+        <span style={{ color: "#c9a84c", fontSize: "9px", fontWeight: "600" }}>
+          Generated {generatedOn} · Exam Management System
         </span>
       </div>
     </div>
