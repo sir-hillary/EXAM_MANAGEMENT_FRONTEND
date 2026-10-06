@@ -1,9 +1,17 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, Download, Loader2, AlertTriangle,
-  CheckCircle2, CalendarDays, Users, School,
-  BookOpen, FileDown, Clock,
+  ArrowLeft,
+  Download,
+  Loader2,
+  AlertTriangle,
+  CheckCircle2,
+  CalendarDays,
+  Users,
+  School,
+  BookOpen,
+  FileDown,
+  Clock,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { createPortal } from "react-dom";
@@ -24,7 +32,7 @@ const currentAcademicYear = () => {
 // Double-rAF paint confirmation — same pattern as single report card
 const waitForPaint = () =>
   new Promise((resolve) =>
-    requestAnimationFrame(() => requestAnimationFrame(resolve))
+    requestAnimationFrame(() => requestAnimationFrame(resolve)),
   );
 
 const useOffscreenSlot = () => {
@@ -37,6 +45,9 @@ const useOffscreenSlot = () => {
       "left:-9999px",
       "top:0",
       "width:794px",
+      "min-width:794px", // ← prevent collapse
+      "display:block", // ← explicit block, not inline
+      "overflow:visible", // ← allow content taller than viewport
       "background:#fff",
       "z-index:-1",
       "pointer-events:none",
@@ -57,10 +68,22 @@ const useOffscreenSlot = () => {
 // ── Small stat chip ──────────────────────────────────────────────────────────
 const StatChip = ({ icon: Icon, label, value, color = "blue" }) => {
   const colors = {
-    blue:   { bg: "bg-blue-50",   text: "text-blue-700",  icon: "text-blue-500"  },
-    green:  { bg: "bg-green-50",  text: "text-green-700", icon: "text-green-500" },
-    purple: { bg: "bg-purple-50", text: "text-purple-700",icon: "text-purple-500"},
-    amber:  { bg: "bg-amber-50",  text: "text-amber-700", icon: "text-amber-500" },
+    blue: { bg: "bg-blue-50", text: "text-blue-700", icon: "text-blue-500" },
+    green: {
+      bg: "bg-green-50",
+      text: "text-green-700",
+      icon: "text-green-500",
+    },
+    purple: {
+      bg: "bg-purple-50",
+      text: "text-purple-700",
+      icon: "text-purple-500",
+    },
+    amber: {
+      bg: "bg-amber-50",
+      text: "text-amber-700",
+      icon: "text-amber-500",
+    },
   };
   const c = colors[color] || colors.blue;
   return (
@@ -99,33 +122,37 @@ const ProgressBar = ({ current, total }) => {
 };
 
 export default function BulkReportCardDownload() {
-  const navigate                    = useNavigate();
-  const { data: classesData }       = useClasses({ limit: 100 });
+  const navigate = useNavigate();
+  const { data: classesData } = useClasses({ limit: 100 });
 
   const [selectedClassId, setSelectedClassId] = useState("");
-  const [termNumber,      setTermNumber]      = useState("1");
-  const [academicYear,    setAcademicYear]    = useState(currentAcademicYear);
-  const [isGenerating,    setIsGenerating]    = useState(false);
-  const [progress,        setProgress]        = useState({ current: 0, total: 0 });
-  const [isDone,          setIsDone]          = useState(false);
+  const [termNumber, setTermNumber] = useState("1");
+  const [academicYear, setAcademicYear] = useState(currentAcademicYear);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [isDone, setIsDone] = useState(false);
 
   // School-wide dates — still needed since they're not in the API
   const [closingDate, setClosingDate] = useState("");
   const [openingDate, setOpeningDate] = useState("");
 
   // Current report being painted into the off-screen slot
-  const [currentReport,   setCurrentReport]   = useState(null);
+  const [currentReport, setCurrentReport] = useState(null);
   const [currentExamType, setCurrentExamType] = useState("");
   const paintResolveRef = useRef(null);
 
   const { slotRef, slotElement } = useOffscreenSlot();
 
-  const { data: bulkData, isLoading, isError, error } =
-    useClassTermReportCards(selectedClassId, termNumber, academicYear);
+  const {
+    data: bulkData,
+    isLoading,
+    isError,
+    error,
+  } = useClassTermReportCards(selectedClassId, termNumber, academicYear);
 
-  const meta         = bulkData?.data;
+  const meta = bulkData?.data;
   const selectedClass = classesData?.data?.find(
-    (c) => String(c.id) === String(selectedClassId)
+    (c) => String(c.id) === String(selectedClassId),
   );
 
   // Paint handshake — resolves after two rAF confirming DOM has painted
@@ -152,10 +179,14 @@ export default function BulkReportCardDownload() {
     setIsDone(false);
     setProgress({ current: 0, total: meta.student_ids.length });
 
-    const pdf        = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-    const pageWidth  = pdf.internal.pageSize.getWidth();
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+    const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    let   isFirst    = true;
+    let isFirst = true;
 
     try {
       for (let i = 0; i < meta.student_ids.length; i++) {
@@ -163,11 +194,11 @@ export default function BulkReportCardDownload() {
         setProgress({ current: i + 1, total: meta.student_ids.length });
 
         // Fetch this student's report card
-        const token   = localStorage.getItem("token");
+        const token = localStorage.getItem("token");
         const apiBase = import.meta.env.VITE_API_URL;
-        const res     = await fetch(
+        const res = await fetch(
           `${apiBase}/students/${studentId}/report-card?term_number=${termNumber}&academic_year=${encodeURIComponent(academicYear)}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${token}` } },
         );
 
         if (!res.ok) {
@@ -191,32 +222,32 @@ export default function BulkReportCardDownload() {
         slotRef.current.style.visibility = "visible";
 
         const canvas = await html2canvas(slotRef.current, {
-          scale:           2,
-          useCORS:         true,
-          allowTaint:      false,
+          scale: 2,
+          useCORS: true,
+          allowTaint: false,
           backgroundColor: "#ffffff",
-          logging:         false,
+          logging: false,
           onclone: (clonedDoc) => {
             clonedDoc
               .querySelectorAll("style, link[rel='stylesheet']")
               .forEach((el) => el.remove());
             clonedDoc.body.style.background = "#ffffff";
-            clonedDoc.body.style.margin     = "0";
-            clonedDoc.body.style.padding    = "0";
+            clonedDoc.body.style.margin = "0";
+            clonedDoc.body.style.padding = "0";
           },
         });
 
         slotRef.current.style.visibility = "hidden";
 
-        const imgData  = canvas.toDataURL("image/png");
-        const imgW     = pageWidth;
-        const imgH     = (canvas.height / canvas.width) * imgW;
+        const imgData = canvas.toDataURL("image/png");
+        const imgW = pageWidth;
+        const imgH = (canvas.height / canvas.width) * imgW;
 
         if (!isFirst) pdf.addPage();
         isFirst = false;
 
         let heightLeft = imgH;
-        let position   = 0;
+        let position = 0;
         pdf.addImage(imgData, "PNG", 0, position, imgW, imgH);
         heightLeft -= pageHeight;
         while (heightLeft > 0) {
@@ -259,7 +290,7 @@ export default function BulkReportCardDownload() {
             openingDate={openingDate || null}
             // No classTeacherName prop — already in currentReport.class.teacher_name
           />,
-          slotElement
+          slotElement,
         )
       : null;
 
@@ -286,13 +317,19 @@ export default function BulkReportCardDownload() {
         <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           {/* Card header */}
           <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: "linear-gradient(135deg,#1a2744,#243355)" }}>
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+              style={{ background: "linear-gradient(135deg,#1a2744,#243355)" }}
+            >
               <FileDown size={16} className="text-yellow-400" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-900">Configure report batch</p>
-              <p className="text-xs text-gray-500">Select the class, term, and year</p>
+              <p className="text-sm font-semibold text-gray-900">
+                Configure report batch
+              </p>
+              <p className="text-xs text-gray-500">
+                Select the class, term, and year
+              </p>
             </div>
           </div>
 
@@ -305,14 +342,19 @@ export default function BulkReportCardDownload() {
             >
               <option value="">Select class...</option>
               {classesData?.data?.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
               ))}
             </SelectField>
 
             <SelectField
               label="Term"
               value={termNumber}
-              onChange={(e) => { setTermNumber(e.target.value); setIsDone(false); }}
+              onChange={(e) => {
+                setTermNumber(e.target.value);
+                setIsDone(false);
+              }}
             >
               <option value="1">Term 1</option>
               <option value="2">Term 2</option>
@@ -320,10 +362,15 @@ export default function BulkReportCardDownload() {
             </SelectField>
 
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Academic year</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Academic year
+              </label>
               <input
                 value={academicYear}
-                onChange={(e) => { setAcademicYear(e.target.value); setIsDone(false); }}
+                onChange={(e) => {
+                  setAcademicYear(e.target.value);
+                  setIsDone(false);
+                }}
                 placeholder="2024/2025"
                 className="input-field"
               />
@@ -335,7 +382,9 @@ export default function BulkReportCardDownload() {
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
                 School closing date
-                <span className="ml-1 text-gray-400 font-normal">(printed on each report)</span>
+                <span className="ml-1 text-gray-400 font-normal">
+                  (printed on each report)
+                </span>
               </label>
               <input
                 value={closingDate}
@@ -347,7 +396,9 @@ export default function BulkReportCardDownload() {
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
                 School re-opening date
-                <span className="ml-1 text-gray-400 font-normal">(printed on each report)</span>
+                <span className="ml-1 text-gray-400 font-normal">
+                  (printed on each report)
+                </span>
               </label>
               <input
                 value={openingDate}
@@ -363,8 +414,9 @@ export default function BulkReportCardDownload() {
         <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
           <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-800 leading-5">
-            PDF generation runs entirely in your browser. Keep this tab open and active throughout the process.
-            Large classes (30+ learners) may take 2–4 minutes.
+            PDF generation runs entirely in your browser. Keep this tab open and
+            active throughout the process. Large classes (30+ learners) may take
+            2–4 minutes.
           </p>
         </div>
 
@@ -374,10 +426,14 @@ export default function BulkReportCardDownload() {
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 mb-4">
               <School size={24} className="text-gray-400" />
             </div>
-            <p className="text-sm font-semibold text-gray-700 mb-1">No class selected</p>
-            <p className="text-xs text-gray-400 max-w-xs mx-auto">
-              Choose a class, term, and academic year above to begin generating report cards.
+            <p className="text-sm font-semibold text-gray-700 mb-1">
+              No class selected
             </p>
+            <p className="text-xs text-gray-400 max-w-xs mx-auto">
+              Choose a class, term, and academic year above to begin generating
+              report cards.
+            </p>
+            /P
           </div>
         ) : isLoading ? (
           <div className="flex justify-center py-14">
@@ -385,18 +441,23 @@ export default function BulkReportCardDownload() {
           </div>
         ) : isError ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-8 text-center">
-            <p className="text-sm font-semibold text-red-700 mb-1">Failed to load class data</p>
+            <p className="text-sm font-semibold text-red-700 mb-1">
+              Failed to load class data
+            </p>
             <p className="text-xs text-red-500">{error?.message}</p>
           </div>
         ) : meta ? (
           <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-
             {/* Class summary header */}
-            <div className="px-5 py-4 border-b border-gray-100"
-              style={{ background: "linear-gradient(135deg,#f8fafc,#fff)" }}>
+            <div
+              className="px-5 py-4 border-b border-gray-100"
+              style={{ background: "linear-gradient(135deg,#f8fafc,#fff)" }}
+            >
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
-                  <p className="text-base font-black text-gray-900">{meta.class.name}</p>
+                  <p className="text-base font-black text-gray-900">
+                    {meta.class.name}
+                  </p>
                   <p className="text-xs text-gray-500 mt-0.5">
                     Term {meta.term_number} · {meta.academic_year}
                     {selectedClass?.class_teacher_name
@@ -437,7 +498,13 @@ export default function BulkReportCardDownload() {
               <StatChip
                 icon={Clock}
                 label="Est. time"
-                value={meta.count > 30 ? "2–4 min" : meta.count > 15 ? "1–2 min" : "< 1 min"}
+                value={
+                  meta.count > 30
+                    ? "2–4 min"
+                    : meta.count > 15
+                      ? "1–2 min"
+                      : "< 1 min"
+                }
                 color="amber"
               />
             </div>
@@ -448,28 +515,46 @@ export default function BulkReportCardDownload() {
                 <div className="rounded-xl border border-gray-200 bg-gray-50 p-6">
                   <div className="flex justify-center mb-5">
                     <div className="relative">
-                      <div className="w-14 h-14 rounded-full flex items-center justify-center"
-                        style={{ background: "linear-gradient(135deg,#1a2744,#243355)" }}>
-                        <Loader2 size={24} className="animate-spin text-yellow-400" />
+                      <div
+                        className="w-14 h-14 rounded-full flex items-center justify-center"
+                        style={{
+                          background: "linear-gradient(135deg,#1a2744,#243355)",
+                        }}
+                      >
+                        <Loader2
+                          size={24}
+                          className="animate-spin text-yellow-400"
+                        />
                       </div>
                     </div>
                   </div>
-                  <ProgressBar current={progress.current} total={progress.total} />
+                  <ProgressBar
+                    current={progress.current}
+                    total={progress.total}
+                  />
                   <p className="text-xs text-gray-400 text-center mt-3">
                     Please keep this tab open and active
                   </p>
                 </div>
               ) : isDone ? (
                 <div className="rounded-xl border border-green-200 bg-green-50 p-6 text-center">
-                  <CheckCircle2 size={32} className="text-green-600 mx-auto mb-2" />
+                  <CheckCircle2
+                    size={32}
+                    className="text-green-600 mx-auto mb-2"
+                  />
                   <p className="text-sm font-semibold text-green-800 mb-0.5">
                     All {meta.count} report cards downloaded
                   </p>
                   <p className="text-xs text-green-600 mb-4">
-                    Saved as {meta.class.name.replace(/\s+/g, "-")}_Term{termNumber}_{academicYear.replace("/", "-")}_ReportCards.pdf
+                    Saved as {meta.class.name.replace(/\s+/g, "-")}_Term
+                    {termNumber}_{academicYear.replace("/", "-")}
+                    _ReportCards.pdf
                   </p>
                   <button
-                    onClick={() => { setIsDone(false); setProgress({ current: 0, total: 0 }); }}
+                    onClick={() => {
+                      setIsDone(false);
+                      setProgress({ current: 0, total: 0 });
+                    }}
                     className="btn-secondary text-xs px-4 py-2"
                   >
                     Download again
@@ -480,10 +565,18 @@ export default function BulkReportCardDownload() {
                   onClick={handleBulkDownload}
                   disabled={meta.count === 0}
                   className="btn-primary w-full justify-center py-3 text-sm"
-                  style={meta.count > 0 ? { background: "linear-gradient(135deg,#1a2744,#243355)", boxShadow: "0 4px 14px rgba(26,39,68,0.25)" } : {}}
+                  style={
+                    meta.count > 0
+                      ? {
+                          background: "linear-gradient(135deg,#1a2744,#243355)",
+                          boxShadow: "0 4px 14px rgba(26,39,68,0.25)",
+                        }
+                      : {}
+                  }
                 >
                   <Download size={16} />
-                  Download {meta.count} report card{meta.count !== 1 ? "s" : ""} as PDF
+                  Download {meta.count} report card{meta.count !== 1 ? "s" : ""}{" "}
+                  as PDF
                 </button>
               )}
             </div>

@@ -401,9 +401,10 @@ const ReportCard = () => {
                 ref={documentRef}
                 style={{
                   isolation: "isolate",
-                  all: "initial",
-                  display: "block",
                   colorScheme: "light",
+                  display: "block",
+                  width: "794px",
+                  background: "#ffffff",
                 }}
               >
                 {/* Pass closing/opening dates to the document */}
