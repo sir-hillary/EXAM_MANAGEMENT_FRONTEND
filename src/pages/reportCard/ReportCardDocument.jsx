@@ -164,7 +164,8 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
       ref={ref}
       style={{
         width: "794px",
-        minWidth: "794px", // ← prevents collapse in flex containers
+        minWidth: "794px",
+        minHeight: "1123px", // ← A4 portrait at 96dpi: 297mm × 3.7795px/mm
         backgroundColor: "#ffffff",
         fontFamily: "'Segoe UI', Arial, sans-serif",
         fontSize: "11px",
