@@ -3,13 +3,14 @@ import {
   Users, ClipboardList, BarChart3, FileBarChart,
   AlertTriangle, CheckCircle2, ChevronRight,
   Activity, Award, Clock, CalendarDays,
-  BookOpen, TrendingUp, UserCheck, School,
+  BookOpen, TrendingUp, School,
+  UserCheck,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { useTeacherDashboard } from "../../hooks/useTeacherDashboard";
 import { StudentAvatar } from "../../components/ui/StudentAvatar";
 import { TeacherAvatar } from "../../components/ui/TeacherAvatar";
 import { getDivision } from "../../utils/schoolDivisions";
+import { useTeacherDashboard } from "../../hooks/useDashboardStats";
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const T = {
