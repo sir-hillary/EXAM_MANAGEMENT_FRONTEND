@@ -36,14 +36,13 @@ export const useDashboardStats = () =>
     staleTime: 2 * 60 * 1000,   // 2 minutes
     refetchOnWindowFocus: false,
   });
-export const useTeacherDashboard = (teacherId) => {
-  const myExams = useExams({ teacher_id: teacherId, limit: 10 });
-
-  return {
-    exams: myExams.data?.data ?? [],
-    isLoading: myExams.isLoading,
-  };
-};
+export const useTeacherDashboard = () =>
+  useQuery({
+    queryKey: ['dashboard', 'teacher-stats'],
+    queryFn:  () => apiClient.get('/dashboard/teacher-stats').then(r => r.data.data),
+    staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
 export const useStudentDashboard = (studentId) => {
   const myResults = useStudentResults(studentId);
