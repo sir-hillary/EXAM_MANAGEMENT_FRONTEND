@@ -3,6 +3,8 @@ import { useTeachers } from "./useTeachers";
 import { useSubjects } from "./useSubjects";
 import { useStudents, useStudentResults } from "./useStudents";
 import { useExams } from "./useExams";
+import { useQuery } from "@tanstack/react-query";
+import apiClient from "../api/client";
 
 const useAdminStats = () => {
   const classes = useClasses({ limit: 1 });
@@ -27,6 +29,13 @@ const useAdminStats = () => {
   };
 };
 
+export const useDashboardStats = () =>
+  useQuery({
+    queryKey: ['dashboard', 'stats'],
+    queryFn:  () => apiClient.get('/dashboard/stats').then(r => r.data.data),
+    staleTime: 2 * 60 * 1000,   // 2 minutes
+    refetchOnWindowFocus: false,
+  });
 export const useTeacherDashboard = (teacherId) => {
   const myExams = useExams({ teacher_id: teacherId, limit: 10 });
 
@@ -37,10 +46,6 @@ export const useTeacherDashboard = (teacherId) => {
 };
 
 export const useStudentDashboard = (studentId) => {
-  const results = useStudents(
-    {},
-    { enabled: false }, // not needed — we use the direct results hook
-  );
   const myResults = useStudentResults(studentId);
 
   return {
