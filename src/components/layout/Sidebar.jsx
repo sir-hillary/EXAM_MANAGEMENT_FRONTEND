@@ -1,5 +1,4 @@
 import { NavLink, useNavigate } from "react-router-dom";
-
 import {
   LayoutDashboard,
   School,
@@ -10,18 +9,17 @@ import {
   FileBarChart,
   Link2,
   BarChart3,
-  Award,
-  Download,
-  ImageIcon,
   X,
   LogOut,
+  ChevronLeft,
   ChevronRight,
+  FileDown,
+  Award,
+  Image,
 } from "lucide-react";
-
 import { useAuth } from "../../context/AuthContext";
 
-// ── Navigation structure ──────────────────────────────────────────────────────
-
+// ── Nav structure — all routes including new ones ─────────────────────────────
 const navSections = [
   {
     label: "Main",
@@ -50,15 +48,8 @@ const navSections = [
         icon: GraduationCap,
         roles: ["admin"],
       },
-      {
-        to: "/banners",
-        label: "Login Banners",
-        icon: ImageIcon,
-        roles: ["admin"],
-      },
     ],
   },
-
   {
     label: "Academics",
     items: [
@@ -88,7 +79,6 @@ const navSections = [
       },
     ],
   },
-
   {
     label: "Reports",
     items: [
@@ -100,33 +90,49 @@ const navSections = [
       },
       {
         to: "/term-report-card",
-        label: "Term Report Card",
+        label: "Term Report",
         icon: Award,
         roles: ["admin", "teacher", "student"],
       },
       {
         to: "/bulk-report-cards",
         label: "Bulk Download",
-        icon: Download,
+        icon: FileDown,
         roles: ["admin", "teacher"],
+      },
+    ],
+  },
+  {
+    label: "Admin",
+    items: [
+      {
+        to: "/banners",
+        label: "Login Banners",
+        icon: Image,
+        roles: ["admin"],
       },
     ],
   },
 ];
 
-// ── Role display names ────────────────────────────────────────────────────────
-
-const roleLabel = {
+// Role display labels
+const ROLE_LABELS = {
   admin: "Administrator",
   teacher: "Teacher",
   student: "Student",
 };
 
-// ── Generate initials from email ──────────────────────────────────────────────
-
-const initials = (email = "") => {
-  const parts = email.split("@")[0].split(/[._-]/);
-
+// Initials from email or display_name
+const initials = (user) => {
+  if (user?.display_name) {
+    const parts = user.display_name.trim().split(/\s+/);
+    return parts
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() ?? "")
+      .join("");
+  }
+  const local = user?.email?.split("@")[0] ?? "";
+  const parts = local.split(/[._-]/);
   return (
     parts
       .slice(0, 2)
@@ -135,355 +141,308 @@ const initials = (email = "") => {
   );
 };
 
-// ── Sidebar ───────────────────────────────────────────────────────────────────
+const shortName = (user) => {
+  if (user?.display_name) return user.display_name.split(" ")[0];
+  return user?.email?.split("@")[0] ?? "";
+};
 
-const Sidebar = ({ open, onClose }) => {
+// ── Tooltip wrapper — shown on collapsed icons ────────────────────────────────
+const Tooltip = ({ label, children }) => (
+  <div className="relative group/tip">
+    {children}
+    <div
+      className="
+      pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3
+      px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white whitespace-nowrap
+      opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50
+    "
+      style={{ background: "#1a2744" }}
+    >
+      {label}
+      {/* Arrow */}
+      <div
+        className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent"
+        style={{ borderRightColor: "#1a2744" }}
+      />
+    </div>
+  </div>
+);
+
+// ── Main Sidebar ──────────────────────────────────────────────────────────────
+const Sidebar = ({ open, onClose, collapsed, onCollapsedChange }) => {
   const { role, user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
+    onClose?.();
     logout();
     navigate("/login", { replace: true });
   };
 
+  const userInitials = initials(user);
+  const userName = shortName(user);
+  const roleLabel = ROLE_LABELS[role] ?? role;
+
   return (
     <>
-      {/* ── Mobile backdrop ──────────────────────────────────────────────── */}
+      {/* ── Mobile backdrop ──────────────────────────────────────── */}
       {open && (
         <div
           onClick={onClose}
           className="fixed inset-0 z-20 md:hidden"
-          style={{ background: "rgba(0,0,0,0.48)" }}
+          style={{ background: "rgba(0,0,0,0.5)" }}
         />
       )}
 
-      {/* ── Sidebar ──────────────────────────────────────────────────────── */}
+      {/* ── Sidebar panel ────────────────────────────────────────── */}
       <aside
-        className={`
-          fixed md:sticky top-0 left-0
-          h-screen w-[248px] shrink-0
-          flex flex-col z-30
-          transition-transform duration-200
-          ${open ? "translate-x-0" : "-translate-x-full"}
-          md:translate-x-0
-        `}
-        style={{
-          background: "#1a3a2a",
-          boxShadow: "8px 0 30px rgba(0,0,0,0.08)",
-        }}
+        style={{ background: "#1a3a2a" }}
+        className={[
+          "fixed md:sticky top-0 left-0 h-screen flex flex-col z-30",
+          "transition-all duration-300 ease-in-out",
+          // Mobile: slide in/out; Desktop: collapse via width
+          open ? "translate-x-0" : "-translate-x-full",
+          "md:translate-x-0",
+          // Width: collapsed = icon-only on desktop
+          collapsed ? "md:w-16" : "md:w-56",
+          // Mobile always full width when open
+          "w-56",
+        ].join(" ")}
       >
-
-        {/* ── Header / School identity ──────────────────────────────────── */}
+        {/* ── Header ───────────────────────────────────────────────── */}
         <div
-          className="px-4 pt-5 pb-4"
-          style={{
-            borderBottom: "1px solid rgba(255,255,255,0.07)",
-          }}
+          className="flex items-center h-14 shrink-0 px-3"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
         >
-          <div className="flex items-center justify-between">
-
-            <div className="flex items-center gap-3 min-w-0">
-
-              {/* School logo */}
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                style={{
-                  background:
-                    "linear-gradient(135deg,#c9a84c,#e8cc85)",
-                  color: "#1a3a2a",
-                  boxShadow:
-                    "0 5px 16px rgba(201,168,76,0.22)",
-                }}
-              >
-                <GraduationCap
-                  size={21}
-                  strokeWidth={2.5}
-                />
-              </div>
-
-              {/* School name */}
-              <div className="min-w-0">
-                <p
-                  className="font-bold leading-tight truncate"
-                  style={{
-                    color: "#f1f8f3",
-                    fontSize: "12px",
-                  }}
-                >
-                  Mukuru Outreach Academy
-                </p>
-
-                <p
-                  className="mt-1 truncate"
-                  style={{
-                    color: "rgba(200,220,205,0.48)",
-                    fontSize: "9px",
-                    letterSpacing: "0.7px",
-                  }}
-                >
-                  EXAM MANAGEMENT SYSTEM
-                </p>
-              </div>
-            </div>
-
-            {/* Mobile close button */}
-            <button
-              type="button"
-              onClick={onClose}
-              className="md:hidden ml-2 shrink-0 hover:text-white transition-colors"
-              style={{
-                color: "rgba(200,220,205,0.5)",
-              }}
-              aria-label="Close menu"
-            >
-              <X size={17} />
-            </button>
-          </div>
-
-          {/* Portal indicator */}
+          {/* School initial badge — always visible */}
           <div
-            className="mt-4 flex items-center gap-2 px-3 py-2 rounded-lg"
+            className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm shrink-0"
             style={{
-              background: "rgba(255,255,255,0.045)",
-              border: "1px solid rgba(255,255,255,0.06)",
+              background: "linear-gradient(135deg,#c9a84c,#e8cc85)",
+              color: "#1a2744",
             }}
           >
-            <span
-              className="w-1.5 h-1.5 rounded-full shrink-0"
-              style={{ background: "#c9a84c" }}
-            />
+            M
+          </div>
 
-            <span
-              className="text-[10px] font-medium"
+          {/* School name — hidden when collapsed */}
+          <div
+            className={[
+              "ml-2.5 flex-1 min-w-0 transition-all duration-300",
+              collapsed ? "md:hidden" : "",
+            ].join(" ")}
+          >
+            <p className="text-xs font-black text-white leading-tight truncate">
+              Mukuru Outreach
+            </p>
+            <p
+              className="text-xs truncate"
               style={{
-                color: "rgba(225,240,228,0.58)",
+                color: "rgba(201,168,76,0.6)",
+                fontSize: "9px",
+                letterSpacing: "0.5px",
               }}
             >
-              Academic Administration Portal
-            </span>
+              Exam Management
+            </p>
           </div>
+
+          {/* Desktop collapse toggle */}
+          <button
+            onClick={() => onCollapsedChange?.(!collapsed)}
+            className={[
+              "hidden md:flex items-center justify-center w-6 h-6 rounded-lg shrink-0 transition-colors",
+              "hover:bg-white/10",
+              collapsed ? "ml-0" : "ml-1",
+            ].join(" ")}
+            style={{ color: "rgba(201,168,76,0.7)" }}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          </button>
+
+          {/* Mobile close button */}
+          <button
+            onClick={onClose}
+            className="md:hidden flex items-center justify-center w-6 h-6 rounded-lg ml-1 shrink-0 hover:bg-white/10 transition-colors"
+            style={{ color: "rgba(200,220,205,0.6)" }}
+            aria-label="Close sidebar"
+          >
+            <X size={14} />
+          </button>
         </div>
 
-        {/* ── Navigation ─────────────────────────────────────────────────── */}
-        <nav className="flex-1 overflow-y-auto px-3 py-5">
-
-          {navSections.map((section, sectionIndex) => {
+        {/* ── Nav sections ─────────────────────────────────────────── */}
+        <nav
+          className="flex-1 overflow-y-auto overflow-x-hidden py-3"
+          style={{ scrollbarWidth: "none" }}
+        >
+          {navSections.map((section) => {
             const visibleItems = section.items.filter((item) =>
-              item.roles.includes(role)
+              item.roles.includes(role),
             );
-
             if (visibleItems.length === 0) return null;
 
             return (
-              <div
-                key={section.label}
-                className={sectionIndex > 0 ? "mt-6" : ""}
-              >
-
-                {/* Section heading */}
-                <div className="flex items-center gap-2 px-3 mb-2">
-
-                  <span
-                    className="font-bold uppercase"
-                    style={{
-                      color: "rgba(200,220,205,0.34)",
-                      fontSize: "9px",
-                      letterSpacing: "1.4px",
-                    }}
+              <div key={section.label} className="mb-1">
+                {/* Section label — hidden when collapsed */}
+                <div
+                  className={[
+                    "transition-all duration-200 overflow-hidden",
+                    collapsed ? "md:h-0 md:opacity-0" : "h-auto opacity-100",
+                  ].join(" ")}
+                >
+                  <p
+                    className="px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
+                    style={{ color: "rgba(200,220,205,0.3)", fontSize: "9px" }}
                   >
                     {section.label}
-                  </span>
-
-                  <div
-                    className="flex-1 h-px"
-                    style={{
-                      background: "rgba(255,255,255,0.045)",
-                    }}
-                  />
+                  </p>
                 </div>
 
-                {/* Navigation items */}
-                <div className="space-y-1">
-
-                  {visibleItems.map(
-                    ({ to, label, icon: Icon }) => (
-                      <NavLink
-                        key={to}
-                        to={to}
-                        onClick={onClose}
-                        className="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200"
-                        style={({ isActive }) =>
-                          isActive
-                            ? {
-                                background:
-                                  "linear-gradient(90deg, rgba(201,168,76,0.17), rgba(201,168,76,0.07))",
-                                color: "#e8cc85",
-                                boxShadow:
-                                  "inset 0 0 0 1px rgba(201,168,76,0.08)",
-                              }
-                            : {
-                                color:
-                                  "rgba(220,240,225,0.64)",
-                              }
-                        }
-                      >
-                        {({ isActive }) => (
-                          <>
-                            {/* Active indicator */}
-                            {isActive && (
-                              <span
-                                className="absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full"
-                                style={{
-                                  width: "3px",
-                                  height: "22px",
-                                  background: "#c9a84c",
-                                  boxShadow:
-                                    "0 0 8px rgba(201,168,76,0.45)",
-                                }}
-                              />
-                            )}
-
-                            {/* Icon container */}
-                            <div
-                              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors"
+                {/* Items */}
+                <div className="space-y-0.5 px-2">
+                  {visibleItems.map(({ to, label, icon: Icon }) => (
+                    <NavLink
+                      key={to}
+                      to={to}
+                      onClick={onClose}
+                      className="block"
+                    >
+                      {({ isActive }) => {
+                        const item = (
+                          <div
+                            className={[
+                              "flex items-center rounded-xl transition-all duration-150",
+                              collapsed
+                                ? "md:justify-center md:px-0 md:py-2.5 px-3 py-2"
+                                : "px-3 py-2 gap-2.5",
+                              isActive ? "bg-white/10" : "hover:bg-white/6",
+                            ].join(" ")}
+                            style={
+                              isActive
+                                ? {
+                                    boxShadow: "inset 3px 0 0 #c9a84c",
+                                    background: "rgba(201,168,76,0.12)",
+                                  }
+                                : {}
+                            }
+                          >
+                            {/* Icon */}
+                            <Icon
+                              size={16}
+                              className="shrink-0"
                               style={{
-                                background: isActive
-                                  ? "rgba(201,168,76,0.13)"
-                                  : "rgba(255,255,255,0.025)",
+                                color: isActive
+                                  ? "#c9a84c"
+                                  : "rgba(200,225,210,0.55)",
                               }}
-                            >
-                              <Icon
-                                size={16}
-                                strokeWidth={isActive ? 2.2 : 1.8}
-                                style={{
-                                  color: isActive
-                                    ? "#c9a84c"
-                                    : "rgba(200,225,210,0.48)",
-                                }}
-                              />
-                            </div>
+                            />
 
-                            {/* Label */}
+                            {/* Label — hidden when collapsed on desktop */}
                             <span
-                              className="flex-1 truncate"
+                              className={[
+                                "text-sm truncate transition-all duration-200",
+                                "font-medium",
+                                isActive ? "" : "",
+                                collapsed ? "md:hidden" : "",
+                              ].join(" ")}
                               style={{
-                                fontSize: "13px",
-                                fontWeight: isActive ? 600 : 450,
+                                color: isActive
+                                  ? "#c9a84c"
+                                  : "rgba(220,240,225,0.7)",
                               }}
                             >
                               {label}
                             </span>
+                          </div>
+                        );
 
-                            {/* Active arrow */}
-                            {isActive && (
-                              <ChevronRight
-                                size={14}
-                                style={{
-                                  color: "#c9a84c",
-                                  opacity: 0.8,
-                                }}
-                              />
-                            )}
-                          </>
-                        )}
-                      </NavLink>
-                    )
-                  )}
-
+                        // Wrap with tooltip only on desktop when collapsed
+                        return collapsed ? (
+                          <Tooltip label={label}>{item}</Tooltip>
+                        ) : (
+                          item
+                        );
+                      }}
+                    </NavLink>
+                  ))}
                 </div>
               </div>
             );
           })}
         </nav>
 
-        {/* ── User footer ────────────────────────────────────────────────── */}
+        {/* ── User footer ──────────────────────────────────────────── */}
         <div
-          className="px-3 pt-3 pb-4"
-          style={{
-            borderTop: "1px solid rgba(255,255,255,0.07)",
-          }}
+          className="shrink-0 p-2"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
         >
-
+          {/* Collapsed: just avatar + logout stacked */}
+          {/* Expanded: full row */}
           <div
-            className="rounded-xl p-2.5"
-            style={{
-              background: "rgba(255,255,255,0.045)",
-              border: "1px solid rgba(255,255,255,0.055)",
-            }}
+            className={[
+              "flex items-center gap-2 rounded-xl px-2 py-2",
+              "hover:bg-white/6 transition-colors",
+              collapsed ? "md:flex-col md:gap-1.5 md:px-0" : "",
+            ].join(" ")}
           >
-            <div className="flex items-center gap-2.5">
-
-              {/* Avatar */}
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
-                style={{
-                  background:
-                    "linear-gradient(135deg,#2d5a3e,#244b34)",
-                  border: "1px solid rgba(201,168,76,0.38)",
-                  color: "#e8cc85",
-                }}
-              >
-                {initials(user?.email)}
-              </div>
-
-              {/* User details */}
-              <div className="flex-1 min-w-0">
-                <p
-                  className="truncate font-semibold"
-                  style={{
-                    color: "#e8f5e9",
-                    fontSize: "11px",
-                  }}
-                  title={user?.email}
-                >
-                  {user?.email}
-                </p>
-
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{ background: "#c9a84c" }}
-                  />
-
-                  <p
-                    className="truncate"
-                    style={{
-                      color: "rgba(200,220,205,0.48)",
-                      fontSize: "9px",
-                    }}
-                  >
-                    {roleLabel[role] ?? role}
-                  </p>
-                </div>
-              </div>
-
-              {/* Logout */}
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors hover:bg-red-500/10"
-                style={{
-                  color: "rgba(200,220,205,0.4)",
-                }}
-                aria-label="Log out"
-                title="Log out"
-              >
-                <LogOut size={15} />
-              </button>
+            {/* Avatar */}
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+              style={{
+                background: "linear-gradient(135deg,#243355,#1a2744)",
+                color: "#c9a84c",
+                border: "1.5px solid rgba(201,168,76,0.3)",
+              }}
+            >
+              {userInitials}
             </div>
-          </div>
 
-          {/* Small footer label */}
-          <p
-            className="text-center mt-3"
-            style={{
-              color: "rgba(200,220,205,0.22)",
-              fontSize: "8px",
-              letterSpacing: "0.5px",
-            }}
-          >
-            MUKURU OUTREACH ACADEMY
-          </p>
+            {/* Name + role — hidden when collapsed */}
+            <div
+              className={[
+                "flex-1 min-w-0 transition-all duration-200",
+                collapsed ? "md:hidden" : "",
+              ].join(" ")}
+            >
+              <p
+                className="text-xs font-semibold truncate"
+                style={{ color: "#e8f5e9" }}
+              >
+                {userName}
+              </p>
+              <p
+                className="truncate"
+                style={{ color: "rgba(200,220,205,0.45)", fontSize: "10px" }}
+              >
+                {roleLabel}
+              </p>
+            </div>
+
+            {/* Logout — always visible */}
+            {collapsed ? (
+              <Tooltip label="Sign out">
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center justify-center w-7 h-7 rounded-lg hover:bg-red-500/20 transition-colors"
+                  style={{ color: "rgba(200,220,205,0.4)" }}
+                  aria-label="Sign out"
+                >
+                  <LogOut size={14} />
+                </button>
+              </Tooltip>
+            ) : (
+              <button
+                onClick={handleLogout}
+                className="flex items-center justify-center w-7 h-7 rounded-lg hover:bg-red-500/20 transition-colors shrink-0"
+                style={{ color: "rgba(200,220,205,0.4)" }}
+                aria-label="Sign out"
+              >
+                <LogOut size={14} />
+              </button>
+            )}
+          </div>
         </div>
       </aside>
     </>
