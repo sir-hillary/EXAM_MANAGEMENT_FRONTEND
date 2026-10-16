@@ -1060,7 +1060,7 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
                     color: "#94a3b8",
                     textTransform: "uppercase",
                     letterSpacing: "0.6px",
-                    marginBottom: "4px",
+                    marginBottom: "8px",
                     fontWeight: "600",
                   }}
                 >
