@@ -18,7 +18,7 @@ import ReportCardDocument from "./ReportCardDocument";
 import { downloadReportCard } from "../../utils/downloadReportCard";
 import TableSkeleton from "../../components/ui/TableSkeleton";
 
-const EXAM_TYPES = ["Mid-term", "End-term"];
+const EXAM_TYPES = ["Mid-term", "End-term", "Predictions"];
 const TERMS = [
   { value: 1, label: "Term 1" },
   { value: 2, label: "Term 2" },
