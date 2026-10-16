@@ -433,7 +433,6 @@ export default function BulkReportCardDownload() {
               Choose a class, term, and academic year above to begin generating
               report cards.
             </p>
-            /P
           </div>
         ) : isLoading ? (
           <div className="flex justify-center py-14">
