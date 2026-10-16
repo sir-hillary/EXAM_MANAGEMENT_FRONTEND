@@ -22,7 +22,7 @@ import PageHeader from "../../components/ui/PageHeader";
 import ClassPerformancePDF from "./ClassPerformancePDF";
 import Spinner from "../../components/ui/spinner";
 
-const EXAM_TYPES = ["Mid-term", "End-term", "Prediction"];
+const EXAM_TYPES = ["Mid-term", "End-term", "Predictions"];
 
 const TERMS = [
   { value: "1", label: "Term 1" },
