@@ -11,7 +11,7 @@ import {
 import toast from "react-hot-toast";
 
 import { useAuth } from "../../context/AuthContext";
-import { useStudents, useStudentReportCard } from "../../hooks/useStudents";
+import { useStudents, useStudentTermReportCard } from "../../hooks/useStudents";
 
 import PageHeader from "../../components/ui/PageHeader";
 import SelectField from "../../components/ui/SelectField";
@@ -102,17 +102,12 @@ const TermReportCard = () => {
    * - exam_type (optional)
    */
   const {
-    data: reportData,
-    isLoading,
-    isFetching,
-    isError,
-    error,
-  } = useStudentReportCard(selectedStudentId, {
-    termNumber,
-    academicYear,
-    examType: examTypeFilter,
-  });
-
+  data: reportData,
+  isLoading,
+  isFetching,
+  isError,
+  error,
+} = useStudentTermReportCard(selectedStudentId, termNumber, academicYear);
   const report = reportData?.data;
 
   const errorStatus =
