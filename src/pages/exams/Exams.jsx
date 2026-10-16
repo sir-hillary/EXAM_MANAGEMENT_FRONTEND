@@ -39,7 +39,7 @@ import TableSkeleton from "../../components/ui/TableSkeleton";
   const examTypeBadge = {
   "Mid-term": "bg-amber-50 text-amber-700 border-amber-100",
   "End-term": "bg-violet-50 text-violet-700 border-violet-100",
-  CAT: "bg-blue-50 text-blue-700 border-blue-100",
+  "Predictions": "bg-blue-50 text-blue-700 border-blue-100",
   };
 
 /**
