@@ -36,6 +36,10 @@ const EXAM_TYPES = [
     id: 2,
     name: "End-term",
   },
+  {
+    id: 3,
+    name: "Predictions",
+  },
 ];
 
 /*
