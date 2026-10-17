@@ -17,19 +17,23 @@ import toast from "react-hot-toast";
 import { createPortal } from "react-dom";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { useClassTermReportCards } from "../../hooks/useClasses";
-import { useClasses } from "../../hooks/useClasses";
+import { useClassTermReportCards, useClasses } from "../../hooks/useClasses";
 import PageHeader from "../../components/ui/PageHeader";
 import SelectField from "../../components/ui/SelectField";
 import ReportCardDocument from "./ReportCardDocument";
 import Spinner from "../../components/ui/spinner";
+
+const EXAM_TYPES = [
+  { value: "", label: "All exam types (Full Term)" },
+  { value: "Mid-term", label: "Mid-term only" },
+  { value: "End-term", label: "End-term only" },
+];
 
 const currentAcademicYear = () => {
   const y = new Date().getFullYear();
   return new Date().getMonth() >= 8 ? `${y}/${y + 1}` : `${y - 1}/${y}`;
 };
 
-// Double-rAF paint confirmation — same pattern as single report card
 const waitForPaint = () =>
   new Promise((resolve) =>
     requestAnimationFrame(() => requestAnimationFrame(resolve)),
@@ -45,9 +49,9 @@ const useOffscreenSlot = () => {
       "left:-9999px",
       "top:0",
       "width:794px",
-      "min-width:794px", // ← prevent collapse
-      "display:block", // ← explicit block, not inline
-      "overflow:visible", // ← allow content taller than viewport
+      "min-width:794px",
+      "display:block",
+      "overflow:visible",
       "background:#fff",
       "z-index:-1",
       "pointer-events:none",
@@ -65,25 +69,12 @@ const useOffscreenSlot = () => {
   return { slotRef, slotElement };
 };
 
-// ── Small stat chip ──────────────────────────────────────────────────────────
 const StatChip = ({ icon: Icon, label, value, color = "blue" }) => {
   const colors = {
     blue: { bg: "bg-blue-50", text: "text-blue-700", icon: "text-blue-500" },
-    green: {
-      bg: "bg-green-50",
-      text: "text-green-700",
-      icon: "text-green-500",
-    },
-    purple: {
-      bg: "bg-purple-50",
-      text: "text-purple-700",
-      icon: "text-purple-500",
-    },
-    amber: {
-      bg: "bg-amber-50",
-      text: "text-amber-700",
-      icon: "text-amber-500",
-    },
+    green: { bg: "bg-green-50", text: "text-green-700", icon: "text-green-500" },
+    purple: { bg: "bg-purple-50", text: "text-purple-700", icon: "text-purple-500" },
+    amber: { bg: "bg-amber-50", text: "text-amber-700", icon: "text-amber-500" },
   };
   const c = colors[color] || colors.blue;
   return (
@@ -97,7 +88,6 @@ const StatChip = ({ icon: Icon, label, value, color = "blue" }) => {
   );
 };
 
-// ── Progress bar ─────────────────────────────────────────────────────────────
 const ProgressBar = ({ current, total }) => {
   const pct = total > 0 ? Math.round((current / total) * 100) : 0;
   return (
@@ -128,15 +118,14 @@ export default function BulkReportCardDownload() {
   const [selectedClassId, setSelectedClassId] = useState("");
   const [termNumber, setTermNumber] = useState("1");
   const [academicYear, setAcademicYear] = useState(currentAcademicYear);
+  const [examTypeFilter, setExamTypeFilter] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [isDone, setIsDone] = useState(false);
 
-  // School-wide dates — still needed since they're not in the API
   const [closingDate, setClosingDate] = useState("");
   const [openingDate, setOpeningDate] = useState("");
 
-  // Current report being painted into the off-screen slot
   const [currentReport, setCurrentReport] = useState(null);
   const [currentExamType, setCurrentExamType] = useState("");
   const paintResolveRef = useRef(null);
@@ -155,7 +144,6 @@ export default function BulkReportCardDownload() {
     (c) => String(c.id) === String(selectedClassId),
   );
 
-  // Paint handshake — resolves after two rAF confirming DOM has painted
   useEffect(() => {
     if (!currentReport || !paintResolveRef.current) return;
     waitForPaint().then(() => {
@@ -193,11 +181,16 @@ export default function BulkReportCardDownload() {
         const studentId = meta.student_ids[i];
         setProgress({ current: i + 1, total: meta.student_ids.length });
 
-        // Fetch this student's report card
         const token = localStorage.getItem("token");
         const apiBase = import.meta.env.VITE_API_URL;
+        
+        let queryParams = `term_number=${termNumber}&academic_year=${encodeURIComponent(academicYear)}`;
+        if (examTypeFilter) {
+          queryParams += `&exam_type=${encodeURIComponent(examTypeFilter)}`;
+        }
+
         const res = await fetch(
-          `${apiBase}/students/${studentId}/report-card?term_number=${termNumber}&academic_year=${encodeURIComponent(academicYear)}`,
+          `${apiBase}/students/${studentId}/report-card?${queryParams}`,
           { headers: { Authorization: `Bearer ${token}` } },
         );
 
@@ -208,21 +201,23 @@ export default function BulkReportCardDownload() {
 
         const { data: reportData } = await res.json();
 
-        // Paint into the off-screen slot and wait for two rAF
         await new Promise((resolve) => {
           paintResolveRef.current = resolve;
-          // No classTeacherName — comes from reportData.class.teacher_name
           setCurrentReport(reportData);
-          setCurrentExamType(`Term ${termNumber} — ${academicYear}`);
+          setCurrentExamType(
+            examTypeFilter
+              ? `${examTypeFilter} — Term ${termNumber} (${academicYear})`
+              : `Term ${termNumber} — ${academicYear}`
+          );
         });
 
         if (!slotRef.current) break;
 
-        // Make visible briefly for html2canvas
         slotRef.current.style.visibility = "visible";
 
+        // Reduced scale from 2 to 1.5 to prevent RangeError memory/string length limits
         const canvas = await html2canvas(slotRef.current, {
-          scale: 2,
+          scale: 1.5,
           useCORS: true,
           allowTaint: false,
           backgroundColor: "#ffffff",
@@ -239,7 +234,7 @@ export default function BulkReportCardDownload() {
 
         slotRef.current.style.visibility = "hidden";
 
-        const imgData = canvas.toDataURL("image/png");
+        const imgData = canvas.toDataURL("image/jpeg", 0.85); // JPEG compression reduces memory footprint
         const imgW = pageWidth;
         const imgH = (canvas.height / canvas.width) * imgW;
 
@@ -248,14 +243,18 @@ export default function BulkReportCardDownload() {
 
         let heightLeft = imgH;
         let position = 0;
-        pdf.addImage(imgData, "PNG", 0, position, imgW, imgH);
+        pdf.addImage(imgData, "JPEG", 0, position, imgW, imgH);
         heightLeft -= pageHeight;
         while (heightLeft > 0) {
           position -= pageHeight;
           pdf.addPage();
-          pdf.addImage(imgData, "PNG", 0, position, imgW, imgH);
+          pdf.addImage(imgData, "JPEG", 0, position, imgW, imgH);
           heightLeft -= pageHeight;
         }
+
+        // Cleanup canvas references to free memory
+        canvas.width = 0;
+        canvas.height = 0;
       }
 
       setCurrentReport(null);
@@ -264,6 +263,7 @@ export default function BulkReportCardDownload() {
         meta.class.name.replace(/\s+/g, "-"),
         `Term${termNumber}`,
         academicYear.replace("/", "-"),
+        examTypeFilter ? examTypeFilter.replace(/\s+/g, "-") : "FullTerm",
         "ReportCards.pdf",
       ].join("_");
 
@@ -272,14 +272,13 @@ export default function BulkReportCardDownload() {
       setIsDone(true);
     } catch (err) {
       console.error(err);
-      toast.error("Bulk download failed — check the console for details");
+      toast.error("Bulk download failed — check console for details");
       setCurrentReport(null);
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // ── Portal ───────────────────────────────────────────────────────────────
   const offscreenPortal =
     slotElement && currentReport
       ? createPortal(
@@ -288,7 +287,6 @@ export default function BulkReportCardDownload() {
             examType={currentExamType}
             closingDate={closingDate || null}
             openingDate={openingDate || null}
-            // No classTeacherName prop — already in currentReport.class.teacher_name
           />,
           slotElement,
         )
@@ -299,7 +297,6 @@ export default function BulkReportCardDownload() {
       {offscreenPortal}
 
       <div className="space-y-6">
-        {/* ── Header ────────────────────────────────────────────────── */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
@@ -313,9 +310,7 @@ export default function BulkReportCardDownload() {
           />
         </div>
 
-        {/* ── Configuration card ────────────────────────────────────── */}
         <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-          {/* Card header */}
           <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
             <div
               className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
@@ -328,13 +323,12 @@ export default function BulkReportCardDownload() {
                 Configure report batch
               </p>
               <p className="text-xs text-gray-500">
-                Select the class, term, and year
+                Select class, term, year, and optional exam scope
               </p>
             </div>
           </div>
 
-          {/* Filters grid */}
-          <div className="p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <SelectField
               label="Class"
               value={selectedClassId}
@@ -371,13 +365,24 @@ export default function BulkReportCardDownload() {
                   setAcademicYear(e.target.value);
                   setIsDone(false);
                 }}
-                placeholder="2024/2025"
+                placeholder="2025/2026"
                 className="input-field"
               />
             </div>
+
+            <SelectField
+              label="Exam Scope"
+              value={examTypeFilter}
+              onChange={(e) => setExamTypeFilter(e.target.value)}
+            >
+              {EXAM_TYPES.map((et) => (
+                <option key={et.value} value={et.value}>
+                  {et.label}
+                </option>
+              ))}
+            </SelectField>
           </div>
 
-          {/* Closing / opening dates */}
           <div className="px-5 pb-5 grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -389,7 +394,7 @@ export default function BulkReportCardDownload() {
               <input
                 value={closingDate}
                 onChange={(e) => setClosingDate(e.target.value)}
-                placeholder="e.g. 14th November 2025"
+                placeholder="e.g. 14th November 2026"
                 className="input-field"
               />
             </div>
@@ -403,24 +408,20 @@ export default function BulkReportCardDownload() {
               <input
                 value={openingDate}
                 onChange={(e) => setOpeningDate(e.target.value)}
-                placeholder="e.g. 6th January 2026"
+                placeholder="e.g. 5th January 2027"
                 className="input-field"
               />
             </div>
           </div>
         </div>
 
-        {/* ── Warning banner ────────────────────────────────────────── */}
         <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
           <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-800 leading-5">
-            PDF generation runs entirely in your browser. Keep this tab open and
-            active throughout the process. Large classes (30+ learners) may take
-            2–4 minutes.
+            PDF generation runs locally in your browser. Keep this tab active. For large classes, scoping by specific exam types speeds up compilation and avoids browser memory limits.
           </p>
         </div>
 
-        {/* ── Results area ──────────────────────────────────────────── */}
         {!selectedClassId ? (
           <div className="rounded-2xl border border-dashed border-gray-300 bg-white py-16 text-center">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 mb-4">
@@ -430,8 +431,7 @@ export default function BulkReportCardDownload() {
               No class selected
             </p>
             <p className="text-xs text-gray-400 max-w-xs mx-auto">
-              Choose a class, term, and academic year above to begin generating
-              report cards.
+              Choose a class, term, and year above to begin batch generation.
             </p>
           </div>
         ) : isLoading ? (
@@ -447,7 +447,6 @@ export default function BulkReportCardDownload() {
           </div>
         ) : meta ? (
           <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-            {/* Class summary header */}
             <div
               className="px-5 py-4 border-b border-gray-100"
               style={{ background: "linear-gradient(135deg,#f8fafc,#fff)" }}
@@ -465,7 +464,6 @@ export default function BulkReportCardDownload() {
                   </p>
                 </div>
 
-                {/* Done badge */}
                 {isDone && !isGenerating && (
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-full">
                     <CheckCircle2 size={13} /> Downloaded successfully
@@ -474,7 +472,6 @@ export default function BulkReportCardDownload() {
               </div>
             </div>
 
-            {/* Stats chips */}
             <div className="p-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
               <StatChip
                 icon={Users}
@@ -497,18 +494,11 @@ export default function BulkReportCardDownload() {
               <StatChip
                 icon={Clock}
                 label="Est. time"
-                value={
-                  meta.count > 30
-                    ? "2–4 min"
-                    : meta.count > 15
-                      ? "1–2 min"
-                      : "< 1 min"
-                }
+                value={meta.count > 30 ? "2–4 min" : "1–2 min"}
                 color="amber"
               />
             </div>
 
-            {/* Generation area */}
             <div className="px-5 pb-6">
               {isGenerating ? (
                 <div className="rounded-xl border border-gray-200 bg-gray-50 p-6">
@@ -544,17 +534,12 @@ export default function BulkReportCardDownload() {
                   <p className="text-sm font-semibold text-green-800 mb-0.5">
                     All {meta.count} report cards downloaded
                   </p>
-                  <p className="text-xs text-green-600 mb-4">
-                    Saved as {meta.class.name.replace(/\s+/g, "-")}_Term
-                    {termNumber}_{academicYear.replace("/", "-")}
-                    _ReportCards.pdf
-                  </p>
                   <button
                     onClick={() => {
                       setIsDone(false);
                       setProgress({ current: 0, total: 0 });
                     }}
-                    className="btn-secondary text-xs px-4 py-2"
+                    className="btn-secondary text-xs px-4 py-2 mt-2"
                   >
                     Download again
                   </button>
