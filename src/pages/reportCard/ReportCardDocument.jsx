@@ -1041,58 +1041,75 @@ const ReportCardDocument = forwardRef(function ReportCardDocument(
           )}
 
           {/* Three signature slots */}
+          {/* Three signature slots */}
           <div
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr 1fr",
-              gap: "16px",
+              gap: "24px",
             }}
           >
-            {[
-              "Class Teacher's Signature & Date",
-              "Head Teacher's Signature & Date",
-              "Parent / Guardian Signature & Date",
-            ].map((label) => (
-              <div key={label}>
-                <div
-                  style={{
-                    fontSize: "8px",
-                    color: "#94a3b8",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.6px",
-                    marginBottom: "8px",
-                    fontWeight: "600",
-                  }}
-                >
-                  {label}
-                </div>
-                {/* Signature space */}
-                <div
-                  style={{
-                    borderBottom: "1.5px solid #cbd5e1",
-                    paddingBottom: "20px",
-                    marginBottom: "4px",
-                  }}
-                />
-                {/* Date line */}
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "5px" }}
-                >
-                  <span
+            {["Class Teacher", "Head Teacher", "Parent / Guardian"].map(
+              (role) => (
+                <div key={role}>
+                  {/* Role Title */}
+                  <div
                     style={{
-                      fontSize: "7.5px",
-                      color: "#94a3b8",
+                      fontSize: "8.5px",
+                      color: "#64748b",
                       textTransform: "uppercase",
-                      letterSpacing: "0.4px",
-                      whiteSpace: "nowrap",
+                      letterSpacing: "0.6px",
+                      marginBottom: "16px",
+                      fontWeight: "600",
                     }}
                   >
-                    Date:
-                  </span>
-                  <div style={{ flex: 1, borderBottom: "1px solid #e2e8f0" }} />
+                    {role}
+                  </div>
+
+                  {/* Signature Section with plenty of vertical height */}
+                  <div style={{ marginBottom: "16px" }}>
+                    <div
+                      style={{
+                        fontSize: "7.5px",
+                        color: "#94a3b8",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.4px",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      Signature
+                    </div>
+                    <div
+                      style={{
+                        borderBottom: "1.5px solid #cbd5e1",
+                        minHeight: "40px", // Provides ample physical space for signatures
+                      }}
+                    />
+                  </div>
+
+                  {/* Date Section */}
+                  <div>
+                    <div
+                      style={{
+                        fontSize: "7.5px",
+                        color: "#94a3b8",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.4px",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      Date
+                    </div>
+                    <div
+                      style={{
+                        borderBottom: "1px solid #cbd5e1",
+                        minHeight: "18px",
+                      }}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
+              ),
+            )}
           </div>
         </div>
       </div>
