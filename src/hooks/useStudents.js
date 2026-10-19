@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { studentsApi } from "../api";
 import toast from "react-hot-toast";
+import apiClient from "../api/client";
 
 export const useStudents = (params = {}, options = {}) => {
   return useQuery({
@@ -79,11 +80,12 @@ export const useGenderStats = (classId) => {
   });
 };
 
-export const useStudentTermReportCard = (id, termNumber, academicYear) => {
-  return useQuery({
-    queryKey: ['students', id, 'term-report-card', termNumber, academicYear],
-    queryFn: () => studentsApi.getTermReportCard(id, termNumber, academicYear),
-    enabled: !!id && !!termNumber && !!academicYear,
+export const useStudentTermReportCard = (studentId, params) =>
+  useQuery({
+    queryKey: ["term-report-card", studentId, params],
+    queryFn:  () => apiClient
+      .get(`/students/${studentId}/term-report-card`, { params })
+      .then(r => r.data),
+    enabled: !!studentId && !!params?.term_number && !!params?.academic_year,
     retry: false,
-  });
-};
+  })
