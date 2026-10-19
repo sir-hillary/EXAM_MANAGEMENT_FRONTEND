@@ -83,9 +83,13 @@ export const useGenderStats = (classId) => {
 export const useStudentTermReportCard = (studentId, params) =>
   useQuery({
     queryKey: ["term-report-card", studentId, params],
-    queryFn:  () => apiClient
-      .get(`/students/${studentId}/term-report-card`, { params })
-      .then(r => r.data),
-    enabled: !!studentId && !!params?.term_number && !!params?.academic_year,
+    queryFn:  () =>
+      apiClient
+        .get(`/students/${studentId}/term-report-card`, { params })
+        .then((r) => r.data),
+    enabled:
+      !!studentId &&
+      !!params?.term_number &&
+      !!params?.academic_year,
     retry: false,
-  })
+  });
