@@ -25,6 +25,7 @@ const EXAM_TYPES = [
   { value: "", label: "All exam types" },
   { value: "Mid-term", label: "Mid-term only" },
   { value: "End-term", label: "End-term only" },
+  { value: "Predictions", label: "Predictions only" },
 ];
 
 const TERMS = [
